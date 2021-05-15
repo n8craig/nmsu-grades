@@ -1,0 +1,203 @@
+---
+title: "Canvas Summarize and Explore Grades Across Classes"
+author: "Nathan Craig"
+date: "13 May 2021"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+    df_print: paged
+    link-citations: yes
+  html_notebook:
+    toc: yes
+    number_sections: yes
+    link-citations: yes
+bibliography: [references.bib, packages.bib]
+---
+
+# Load Libraries
+
+```{r message=FALSE, warning=FALSE}
+
+# Read CSV file
+library(readr)
+
+# Data wrangling and formatting
+library(tidyverse)
+library(kableExtra)
+library(knitr)
+opts_chunk$set(comment=NA, prompt=FALSE, cache=FALSE, echo=TRUE, results='asis')
+
+# Plotting
+library(ggplot2)
+library(ggstatsplot)
+```
+
+# Load Data and Wrangle
+```{r}
+gb_list <- read_csv("../data/gb_list.csv")
+
+gb_list <- gb_list %>% 
+  mutate(course_id = as_factor(course_id)) %>% 
+  mutate(course_name = as_factor(course_name))
+```
+
+
+```{r}
+# order the factors properly
+gb_list$course_name <- factor(gb_list$course_name,
+                              levels= c(
+                                "ANTH-125G S19",
+                                "ANTH-125G F19",
+                                "HON-235G F19",
+                                "ANTH-125G S20",
+                                "ANTH-125G F20",
+                                "HON-235G F20",
+                                "ANTH-1140G S21",
+                                "HNRS-2161G S21"
+                              ))
+```
+
+# Exam 1
+
+```{r}
+# gb_list %>% 
+#   filter(str_detect(assignment_name, "^Exam1|^EXAM1")) %>% 
+#   group_by(course_name) %>%
+#   select(assignment_name, score, course_name) %>% 
+#   descr()
+```
+
+```{r}
+gb_list %>% 
+  filter(str_detect(assignment_name, "^Exam1|^EXAM1")) %>% 
+  group_by(course_name) %>% 
+ggplot(., aes(x = score))+
+  geom_histogram()+
+  facet_wrap(~ course_name)+
+    labs(
+    title = "Exam 1 Histograms Across Classes"
+  )
+  
+```
+
+```{r}
+gb_list %>% 
+  group_by(course_id) %>% 
+  filter(str_detect(assignment_name, "^Exam1|^EXAM1")) %>% 
+  ggplot(.,aes(x=course_name, y = score, group=course_name))+
+  geom_boxplot()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+    labs(
+    title = "Exam 1 Scores Across Different Classes",
+    x = "Course",
+    y = "Exam Score"
+  )
+```
+
+```{r}
+gb_list %>% 
+  group_by(course_name) %>% 
+  filter(str_detect(assignment_name, "^Exam1|^EXAM1")) %>%
+  ggbetweenstats(
+    data = .,
+    x = course_name,
+    y = score,
+    pairwise.comparisons = FALSE)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+    labs(
+    title = "Exam 1 Scores Across Different Classes",
+    x = "Course",
+    y = "Exam Score"
+  )
+```
+
+# Exam 2
+
+```{r}
+gb_list %>% 
+  filter(str_detect(assignment_name, "^Exam2|^EXAM2")) %>% 
+  group_by(course_name) %>% 
+ggplot(., aes(x = score))+
+  geom_histogram()+
+  facet_wrap(~ course_name)+
+  labs(
+    title = "Exam 2 Histograms Across Classes"
+  )
+```
+
+```{r}
+gb_list %>% 
+  group_by(course_id) %>% 
+  filter(str_detect(assignment_name, "^Exam2|^EXAM2")) %>% 
+  ggplot(.,aes(x=course_name, y = score, group=course_name))+
+  geom_boxplot()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  labs(
+    title = "Exam 2 Scores Across Different Classes",
+    x = "Course",
+    y = "Exam Score"
+  )
+```
+
+```{r}
+gb_list %>% 
+  group_by(course_name) %>% 
+  filter(str_detect(assignment_name, "^Exam2|^EXAM2")) %>%
+  ggbetweenstats(
+    data = .,
+    x = course_id,
+    y = score,
+    pairwise.comparisons = FALSE)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+    labs(
+    title = "Exam 2 Scores Across Different Classes",
+    x = "Course",
+    y = "Exam Score"
+  )
+```
+
+# Exam 3
+
+```{r}
+gb_list %>% 
+  filter(str_detect(assignment_name, "^Exam3|^EXAM3|^Fin|^FIN")) %>% 
+  group_by(course_name) %>% 
+ggplot(., aes(x = score))+
+  geom_histogram()+
+  facet_wrap(~ course_name)+
+  labs(
+    title = "Exam 3 Histograms Across Classes"
+  )
+```
+
+```{r}
+gb_list %>% 
+  group_by(course_id) %>% 
+  filter(str_detect(assignment_name, "^Exam3|^EXAM3|^Fin|^FIN")) %>% 
+  ggplot(.,aes(x=course_name, y = score, group=course_name))+
+  geom_boxplot()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  labs(
+    title = "Exam 3 Scores Across Different Classes",
+    x = "Course",
+    y = "Exam Score"
+  )
+```
+
+```{r}
+gb_list %>% 
+  group_by(course_name) %>% 
+  filter(str_detect(assignment_name, "^Exam3|^EXAM3|^Fin|^FIN")) %>%
+  ggbetweenstats(
+    data = .,
+    x = course_id,
+    y = score,
+    pairwise.comparisons = FALSE)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+    labs(
+    title = "Exam 3 Scores Across Different Classes",
+    x = "Course",
+    y = "Exam Score"
+  )
+```
