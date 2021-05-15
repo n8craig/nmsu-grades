@@ -1,0 +1,171 @@
+---
+title: "Canvas Get Grades Across Classes"
+author: "Nathan Craig"
+date: "13 May 2021"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+    df_print: paged
+    link-citations: yes
+  html_notebook:
+    toc: yes
+    number_sections: yes
+    link-citations: yes
+bibliography: [references.bib, packages.bib]
+---
+
+The following blocks of code demonstrate one method for extracting gradebooks from multiple classes and binding them into a single data frame. Since the process of downloading multiple data frames from Canvas can take a while, more than 15 minutes with eight classes, this retrieval portion of the process is separated from the exploratory portion of the process which is detailed in a separate file.
+
+# Load Libraries
+
+```{r message=FALSE, warning=FALSE}
+
+# Safely store credentials
+library(keyring)
+
+# Read canvas course information
+library(rcanvas)
+
+# Data wrangling and formatting
+library(tidyverse)
+library(kableExtra)
+library(knitr)
+opts_chunk$set(comment=NA, prompt=FALSE, cache=FALSE, echo=TRUE, results='asis')
+
+# Plotting
+library(ggplot2)
+library(ggstatsplot)
+```
+
+# Establish Connection to Canvas
+
+```{r}
+# Enter token, set domain, and get class list
+canvas_token <- key_get("canvas-token", "nmc")
+set_canvas_token(token = canvas_token)
+
+#Set domain
+set_canvas_domain("https://nmsu.instructure.com")
+
+# Get course list and eliminate unnecessary columns
+course_list <- get_course_list() %>% 
+  select(id, name)
+course_list
+```
+
+## Get all of one type of class
+
+```{r}
+course_list <- course_list %>% 
+  filter(.,grepl("ANTH-125G|HON-235G|ANTH-1140G|HNRS-2161G", name))
+course_list
+```
+
+I am sure there is a programmatic way to do this (by means of a for loop, lapply, or map function in purrr) but I fiddled around and couldn't figure it out. Therefore, in this case it is hard coded. Note the following step takes more than 15 minutes.
+
+```{r echo=T, eval = F, message=FALSE, warning=FALSE, cache=TRUE, results='hide'}
+# Loading the grade book is pretty slow.
+# Assign grade book to a variable.
+gb_all_1244932 <- get_course_gradebook(1244932)
+gb_all_1246789 <- get_course_gradebook(1246789)
+gb_all_1207030 <- get_course_gradebook(1207030)
+gb_all_1314867 <- get_course_gradebook(1314867)
+gb_all_1312607 <- get_course_gradebook(1312607)
+gb_all_1273540 <- get_course_gradebook(1273540)
+gb_all_1346300 <- get_course_gradebook(1346300)
+gb_all_1345426 <- get_course_gradebook(1345426)
+
+
+```
+
+```{r echo=T, eval = F,}
+# Add a course name column to each data frame
+gb_all_1244932 <- gb_all_1244932 %>% 
+  mutate(course_name = "ANTH-125G F19")
+
+gb_all_1246789 <- gb_all_1246789 %>% 
+  mutate(course_name = "HON-235G F19")
+
+gb_all_1207030 <- gb_all_1207030 %>% 
+  mutate(course_name = "ANTH-125G S19")
+
+gb_all_1314867 <- gb_all_1314867 %>% 
+  mutate(course_name = "ANTH-125G F20")
+
+gb_all_1312607 <- gb_all_1312607 %>% 
+  mutate(course_name = "HON-235G F20")
+
+gb_all_1273540 <- gb_all_1273540 %>% 
+  mutate(course_name = "ANTH-125G S20")
+
+gb_all_1346300 <- gb_all_1346300 %>% 
+  mutate(course_name = "ANTH-1140G S21")
+
+gb_all_1345426 <- gb_all_1345426 %>% 
+  mutate(course_name = "HNRS-2161G S21")
+```
+
+```{r echo=T, eval = F,}
+# Bind the data frames into a list.
+gb_list <- list(gb_all_1244932,
+                gb_all_1246789,
+                gb_all_1207030,
+                gb_all_1314867,
+                gb_all_1312607,
+                gb_all_1273540,
+                gb_all_1346300,
+                gb_all_1345426)
+
+gb_list
+```
+
+Create a function and apply it to the list of data frames.
+
+```{r echo=T, eval = F,}
+# Apply a function that cleans the raw data.
+# Given that the data are written to cvs, the as_factor functions may not be necessary.
+prepR <- function(x){
+  x$assignment_name <- gsub('\\s+', '', x$assignment_name)
+  
+  x %>% 
+  mutate(anon_id = str_c(
+    str_sub(user.name, -3), str_sub(user_id, -3))
+    ) %>% 
+    select(anon_id,
+           assignment_name, 
+           score, 
+           course_id,
+           course_name) %>% 
+  filter(anon_id != 0) %>% # Remove Test Student
+  mutate_all(~replace(., is.na(.), 0)) %>% # Replace NA with 0
+  mutate(assignment_name = as_factor(assignment_name)) %>% 
+  mutate(course_id = as_factor(course_id)) %>% 
+  mutate(course_name = as_factor(course_name))
+}
+```
+
+```{r echo=T, eval = F,}
+# Apply the function to the list of grade books.
+gb_list <- map(gb_list, ~prepR(.))
+gb_list
+```
+
+```{r echo=T, eval = F,}
+# Bind each of the grade books in the list into a single dataframe
+gb_list <- gb_list %>% 
+  bind_rows()
+```
+
+```{r echo=T, eval = F,}
+# Spot check the data frame
+gb_list
+```
+
+```{r echo=T, eval = F,}
+# Save the dataframe to a csv file.
+write.csv(gb_list, "../data/gb_list.csv")
+```
+
+
+From here with the file saved, one can move on to exploration and analysis. This is performed in another notebook.
