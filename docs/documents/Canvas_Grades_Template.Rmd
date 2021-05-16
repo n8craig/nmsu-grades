@@ -1,0 +1,469 @@
+---
+title: "Canvas Grades"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+    df_print: paged
+    link-citations: yes
+  html_notebook:
+    toc: yes
+    number_sections: yes
+    link-citations: yes
+bibliography: [references.bib, packages.bib]
+---
+
+# Introduction
+
+This document contains sample code to: connect to Canvas using the `rcanvas` package [@R-rcanvas], retrieve grade books, wrangle them into shape, and perform some basic exploratory data analysis.
+
+The `rcanvas` package provides an R interface retrieve a class list and grade books for individual classes. The code below illustrates one way to establish a safe connection to Canvas, generate a class list, wrangle the data into a useful shape [@R-tidyverse], and look at trends in the scores [@R-ggplot2; @R-ggstatsplot] through a process of exploratory data analysis (EDA) [@tukey1977].
+
+# Load Libraries
+
+```{r message=FALSE, warning=FALSE}
+# Safely store credentials
+library(keyring)
+
+# Read canvas course information
+library(rcanvas)
+
+# Data wrangling and formatting
+library(tidyverse)
+library(kableExtra)
+library(knitr)
+opts_chunk$set(comment=NA, prompt=FALSE, cache=FALSE, echo=TRUE, results='asis')
+
+# Plotting
+library(ggplot2)
+library(ggstatsplot)
+
+# stats
+library(rstatix)
+library(easystats)
+library(summarytools)
+st_options(bootstrap.css     = FALSE,       # Already part of the theme so no need for it
+           plain.ascii       = FALSE,       # One of the essential settings
+           style             = "rmarkdown", # Idem.
+           dfSummary.silent  = TRUE,        # Suppresses messages about temporary files
+           footnote          = NA,          # Keeping the results minimalistic
+           subtitle.emphasis = FALSE)       # For the vignette theme, this gives better results.
+                                            # For other themes, using TRUE might be preferable.
+```
+
+# Establish Connection to canvas
+
+Connecting to Canvas requires an access token. As described in the `rcanvas` [documentation](https://github.com/daranzolin/rcanvas), to establish an access code, sign into canvas and go to: `Canvas -> Account -> Settings -> Approved Integrations -> Add new token`
+
+The token is then added as an argument to the `set_canvas_token()` argument. It is unwise to hard code an API token into the code. One option is to rely on the rstudioapi::askForPassword() function. The function `rstudioapi::askForPassword("Canvas API Token")` is assigned to a variable and passed to `set_canvas_token()`. Another option is to use the `keyring` library, store the credentials, and then call them. Following [instructions](https://db.rstudio.com/best-practices/managing-credentials/) provided at RStudio, the latter appraoch is employed here.
+
+Connecting to canvas also requires setting the Canvas domain. This is done with the `set_canvas_domain()` function. With the token and domain set, it is possible to pull up a class list. The full class list table contains way more variables than necessary. Below, the key variables class name and id are selected and output as a table.
+
+```{r}
+# Enter token, set domain, and get class list
+canvas_token <- key_get("canvas-token", "nmc")
+set_canvas_token(token = canvas_token)
+
+#Set domain
+set_canvas_domain("https://nmsu.instructure.com")
+
+# Get course list and eliminate unnecessary columns
+get_course_list() %>% 
+  select(id, name)
+```
+
+# Select Class and Get Master Grade Book
+
+For this sample, I've chosen "1273540 2020 Spring - ANTH-125G-M02-INTRO WORLD CULTURES." With the class selected, one can use the `get_course_gradebook()` function to pull the gradebook for the class. Note that it takes quite some time to pull the master grade book, and at least in my case it contains several hundred columns. Given that it takes so long to pull down the grades, and the table requires a bit of wrangling, I suggest saving the master gradebook to a variable that can be called up without having to reload from the server.
+
+```{r echo=T, results='hide', message=FALSE, warning=FALSE}
+# Loading the grade book is pretty slow.
+# Assign grade book to a variable.
+gb_all <- get_course_gradebook(1273540)
+```
+
+## Remove Unwanted Columns and Inspect Others
+
+At least in my case, the institution has subscribed to Turnitin. The master grade book for recent courses contains over 500 columns, all but about 32 of which are part of Turnitin and not of much interest for EDA of grades. In fact, the first couple of times I looked at the master grade book with all of the columns, I couldn't find the most important one--the grades for individual assignments. I found that identifying useful columns was much easier once the hundreds of Turnitin columns were removed.
+
+Older classes, before Turnitin was added don't have as many columns. However, running these lines of code below to strip out Turnitin columns isn't a problem.
+
+```{r}
+# The raw gp contains many 'turnitin_data' cols,
+# remove these to help see cols of interest.
+gb <- gb_all %>% 
+  select(-starts_with("turnitin_data"))
+
+# Get list of col names
+colnames(gb)
+```
+
+## Create Anon ID and Select Necessary Columns
+
+For purposes of the Family Educational Rights and Privacy Act (FERPA), it is critical to ensure student anonymity. The code below strips white space out of the assignment names and constructs an anonymous ID. Canvas also creates a "test student' and this individual needs to be removed. Additionally, if students didn't take a quiz or exam and a 0 was not manually filled in one needs to be added. Lastly, assignment names are turned into a factor.
+
+```{r}
+# Remove whitespace from assignment names
+gb$assignment_name <- gsub('\\s+', '', gb$assignment_name)
+
+# Create anonymous ID, select cols of interest, and
+# drop na's associated with 'test student'
+gb <- gb %>% 
+  mutate(anon_id = str_c(
+    str_sub(user.name, -3), str_sub(user_id, -3))
+    ) %>% 
+    select(anon_id,
+           assignment_name, 
+           score, 
+           course_id) %>% 
+  filter(anon_id != 0) %>% # Remove Test Student
+  mutate_all(~replace(., is.na(.), 0)) %>% # Replace NA with 0
+  mutate(assignment_name = as_factor(assignment_name))
+```
+
+## Filter Syntax for Assignments
+
+The grade book is in "long" rather than "wide" format. If the quizzes and assignments are named properly, it is a simple matter to use a very basic regular expression to filter on the classes of items that are of interest. Such filters can be included in pipelines for various kinds of analyses or or graphing operations.
+
+```{r}
+# Get Exams
+gb %>% filter(str_detect(assignment_name, "^Exam"))
+
+# Get quizzes
+gb %>% filter(str_detect(assignment_name, "^Quiz"))
+
+# Get films
+gb %>% filter(str_detect(assignment_name, "^Film"))
+```
+
+## Get Assignment Counts
+
+Some kinds of analyses require a consistent number of items across various data collection events (Exams, Quizzes, etc). The function below is a really easy way to count the number of items in each instance of a type of assignment. In this case, there are three exams: Exam1, Exam2, and Exam3. Using a regular expression to pull up all exams and summarizing a count shows how many grades are recorded for each exam.
+
+```{r}
+gb %>% 
+  filter(str_detect(assignment_name, "^Exam")) %>% 
+  group_by(assignment_name) %>% 
+  summarize(count=n())
+```
+
+## Prepare Data and Create Attendance Score from Daily Attendance Quizzes
+
+I take attendance by using very brief attendance quizzes at the start of class. This automates the process of people marking themselves present. A Cumulative Attendance score can be created by added up the sum of each day's attendance quiz. In addition to being well suited for regression analysis performed below, having data in a "wide" format is a convienant way to sum across each day's attendance score to generate a Cumulative Attendance. The `tidyverse` function `pivot_wider()` was used for this task. Below the data are pivoted to wide format and the column numbers are retrieved.
+
+```{r}
+gb_wide <- gb %>% 
+  pivot_wider(names_from = assignment_name, values_from = score)
+colnames(gb_wide)
+```
+
+Once pivoted wide, using index location determined above, a sum is calculated across all of the Attendance Quiz columns and then each of the individual quizzes are dropped. Now the data are in wide format with each exam in its own column along with a Cumulative Attendance score.
+
+```{r}
+gb_wide <-gb_wide %>% 
+  mutate(attendance = select(.,7:34) %>% 
+           rowSums(),
+         .after = course_id) %>% 
+  select(.,-(7:34))
+```
+
+# Summary Values
+
+Pulling up the summary values is a good place to start.
+
+```{r}
+gb_wide %>% 
+  select(attendance, Exam1, Exam2, Exam3) %>% 
+  descr()
+```
+
+# Graph Results and Identify Outliers
+
+The library `ggstatsplot` provides a covenant way to report histograms, central tendency, and density curves. Here, `ggstatsplot::gghistostats` is used to create annotated histograms of the course exams. The `rstatix::identify_outliers()` function allows easy flagging of outlying scores on each of the exams.
+
+## Exam 1
+
+```{r message=FALSE, warning=FALSE}
+#Exam 1
+gb %>% 
+  filter(., assignment_name == "Exam1") %>% 
+  gghistostats(data = .,
+             x = score,
+             normal.curve = TRUE,
+             normal.curve.args = list(color = "red", size = 1),
+             ggtheme = ggthemes::theme_tufte(),
+             title = "Exam 1 Scores"
+             )
+```
+
+```{r message=FALSE, warning=FALSE}
+gb %>% 
+  filter(assignment_name=="Exam1") %>% 
+  shapiro_test(score)
+```
+
+```{r message=FALSE, warning=FALSE}
+gb %>% 
+  filter(assignment_name=="Exam1") %>% 
+  ggplot(.,aes(sample = score))+
+  stat_qq()+
+  stat_qq_line()
+```
+
+```{r message=FALSE, warning=FALSE}
+gb %>% 
+  filter(assignment_name=="Exam1") %>% 
+  identify_outliers(score)
+```
+
+## Exam 2
+
+```{r message=FALSE, warning=FALSE}
+# Exam 2
+gb %>% 
+  filter(., assignment_name == "Exam2") %>% 
+  gghistostats(data = .,
+             x = score,
+             normal.curve = TRUE,
+             normal.curve.args = list(color = "red", size = 1),
+             ggtheme = ggthemes::theme_tufte(),
+             title = "Exam 2 Scores"
+             )
+```
+
+```{r message=FALSE, warning=FALSE}
+gb %>% 
+  filter(assignment_name=="Exam2") %>% 
+  shapiro_test(score)
+```
+
+```{r message=FALSE, warning=FALSE}
+gb %>% 
+  filter(assignment_name=="Exam2") %>% 
+  ggplot(.,aes(sample = score))+
+  stat_qq()+
+  stat_qq_line()
+```
+
+```{r message=FALSE, warning=FALSE}
+gb %>% 
+  filter(assignment_name=="Exam2") %>% 
+  identify_outliers(score)
+```
+
+## Exam 3
+
+```{r message=FALSE, warning=FALSE}
+# Exam 3
+gb %>% 
+  filter(., assignment_name == "Exam3") %>% 
+  gghistostats(data = .,
+             x = score,
+             normal.curve = TRUE,
+             normal.curve.args = list(color = "red", size = 1),
+             ggtheme = ggthemes::theme_tufte(),
+             title = "Exam 3 Scores"
+             )
+```
+
+```{r message=FALSE, warning=FALSE}
+gb %>% 
+  filter(assignment_name=="Exam3") %>% 
+  shapiro_test(score)
+```
+
+```{r message=FALSE, warning=FALSE}
+gb %>% 
+  filter(assignment_name=="Exam3") %>% 
+  ggplot(.,aes(sample = score))+
+  stat_qq()+
+  stat_qq_line()
+```
+
+```{r message=FALSE, warning=FALSE}
+gb %>% 
+  filter(assignment_name=="Exam3") %>% 
+  identify_outliers(score)
+```
+
+## Attendance
+
+```{r message=FALSE, warning=FALSE}
+# Attendance
+gb_wide %>% 
+  gghistostats(data = .,
+             x = attendance,
+             normal.curve = TRUE,
+             normal.curve.args = list(color = "red", size = 1),
+             ggtheme = ggthemes::theme_tufte(),
+             title = "Cumulative Attendance Scores"
+             )
+
+```
+
+```{r message=FALSE, warning=FALSE}
+gb_wide %>% 
+  shapiro_test(attendance)
+```
+
+```{r message=FALSE, warning=FALSE}
+gb_wide %>% 
+  ggplot(.,aes(sample = attendance))+
+  stat_qq()+
+  stat_qq_line()
+```
+
+```{r message=FALSE, warning=FALSE}
+gb_wide %>% 
+  select(anon_id, attendance) %>% 
+  identify_outliers(attendance)
+```
+
+Exam 1 has a single outlier while Exams 2 and 3 had three outliers each. Notably, two individuals show up as outliers on both Exams 2 and 3. These might be useful to consider in terms of attendance later on.
+
+## Compare Exam Scores
+
+The `ggstatsplot` library also provides a function `ggwithinstats()` to compare distributions and central tendencies of the three exams. This shows that there are no signficant differences in the means of the three exams.
+
+```{r}
+gb %>% 
+  filter(str_detect(assignment_name, "^Exam")) %>% 
+  group_by(assignment_name) %>% 
+  ggstatsplot::ggwithinstats(data = .,
+               x = assignment_name,
+               y = score
+               )
+```
+
+# Regression
+
+It would be useful to know if attendance predicts exam performance or if performance on one exam predicts performance on another. Linear regression provides a simple way to examine such relationships.
+
+```{r}
+# gb_wide <- gb %>% 
+#   filter(str_detect(assignment_name, "^Exam")) %>% 
+#   pivot_wider(names_from = assignment_name, values_from = score)
+
+```
+
+## Is Attendance a Predictor of Exam Performance?
+
+At least in this class, Cumulative Attendance explained a statistically not significant and weak proportion of the variance in Exam 1 ($R^2 = 1.05e-03, F(1, 41) = 0.04, p = 0.837, adj. R^2 = -0.02$). For Exam 1, attendance was not significant and positive ($b = 0.04, t(41) = 0.21, p = 0.837$).
+
+```{r message=FALSE, warning=FALSE}
+lm(Exam1~attendance, data = gb_wide) %>% 
+  report()
+```
+
+```{r message=FALSE, warning=FALSE}
+gb_wide %>% 
+  ggplot(., aes(attendance, Exam1))+
+  geom_point()+
+  geom_smooth(method = "lm")
+```
+
+Cumulative Attendance explained a statistically not significant and weak proportion of the variance in Exam 2 ($R^2 = 0.08, F(1, 41) = 3.41, p = 0.072, adj. R^2 = 0.05$). The effect of Cumulative Attendance is statistically non-significant and positive ($b = 0.58, t(41) = 1.85, p = 0.072$).
+
+```{r message=FALSE, warning=FALSE}
+lm(Exam2~attendance, data = gb_wide) %>% 
+  report()
+```
+
+```{r message=FALSE, warning=FALSE}
+gb_wide %>% 
+  ggplot(., aes(attendance, Exam2))+
+  geom_point()+
+  geom_smooth(method = "lm")
+```
+
+Cumulative Attendance explained a statistically significant and substantial proportion of the variance in Exam 3 ($R^2 = 0.36, F(1, 41) = 23.00, p < .001, adj. R^2 = 0.34$). The effect of Cumulative Attendance is statistically significant and positive ($b = 1.21, t(41) = 4.80, p < .001$).
+
+```{r message=FALSE, warning=FALSE}
+lm(Exam3~attendance, data = gb_wide) %>% 
+  report()
+```
+
+```{r message=FALSE, warning=FALSE}
+gb_wide %>% 
+  ggplot(., aes(attendance, Exam3))+
+  geom_point()+
+  geom_smooth(method = "lm")
+```
+
+The effect of Cumulative Attendance increased with each exam and was significant on the final.
+
+## Does Performance on One Exam Predict Performance on Another?
+
+Exam 1 explains a statistically significant and weak proportion of the variance ($R^2 = 0.09, F(1, 41) = 4.12, p = 0.049, adj. R^2 = 0.07$). The effect of Exam 1 on Exam 2 is statistically significant and positive ($b = 0.56, 95% CI [2.76e-03, 1.12], t(41) = 2.03, p < .05$).
+
+```{r message=FALSE, warning=FALSE}
+lm(Exam2~Exam1, data = gb_wide) %>% 
+  report()
+```
+
+```{r message=FALSE, warning=FALSE}
+gb_wide %>% 
+  ggplot(., aes(Exam1, Exam2))+
+  geom_point(aes(color = attendance))+
+  geom_smooth(method = "lm")+
+  scale_color_gradient(low="red", high="green")
+```
+
+One can use `ggstatsplot::ggwithinstats()` to see how individual performance changed between Exams 1 and 2. In this case, one can see that the spread of Exam 2 is much wider. This is largely because three individuals who scored below the mean on Exam 1 either got zeros on Exam 2 or generally scored lower than the group as a whole.
+
+```{r message=FALSE, warning=FALSE}
+gb %>% 
+  filter(assignment_name == "Exam1" | assignment_name == "Exam2") %>% 
+    ggstatsplot::ggwithinstats(data = .,
+               x = assignment_name,
+               y = score
+               )
+```
+
+Exam 2 explains a statistically significant and moderate proportion of the variance ($R^2 = 0.24, F(1, 41) = 12.60, p < .001, adj. R^2 = 0.22$). The effect of Exam 2 on Exam 3 performance is statistically significant and positive ($b = 0.47, 95% CI [0.20, 0.73], t(41) = 3.55, p < .001$).
+
+```{r message=FALSE, warning=FALSE}
+lm(Exam3~Exam2, data = gb_wide) %>% 
+  report()
+```
+
+```{r message=FALSE, warning=FALSE}
+gb_wide %>% 
+  ggplot(., aes(Exam2, Exam3))+
+  geom_point(aes(color = attendance))+
+  geom_smooth(method = "lm")+
+  scale_color_gradient(low="red", high="green")
+```
+
+The `ggstatsplot::ggwithinstats()` violin-box plot shows that Exams 2 and 3 have very similar distributions. This is because in each case there is an individual who scored a zero and one additional individual is scoring lower than the group as a whole.
+
+```{r message=FALSE, warning=FALSE}
+gb %>% 
+  filter(assignment_name == "Exam2" | assignment_name == "Exam3") %>% 
+    ggstatsplot::ggwithinstats(data = .,
+               x = assignment_name,
+               y = score
+               )
+```
+
+Together Exams 1 and 2 explain a statistically significant and moderate proportion of the variance in Exam 3 ($R^2 = 0.24, F(2, 40) = 6.35, p = 0.004, adj. R^2 = 0.20$). The effect of Exam 1 is statistically non-significant and negative ($b = -0.14, 95% CI [-0.67, 0.38], t(40) = -0.55, p = 0.584$), and the effect of Exam 2 is statistically significant and positive ($b = 0.49, 95% CI [0.21, 0.77], t(40) = 3.52, p < .01; Std. beta = 0.51$).
+
+```{r message=FALSE, warning=FALSE}
+lm(Exam3~Exam1+Exam2, data = gb_wide) %>% 
+  report()
+```
+
+# Other Analyses
+
+## T-tests
+
+One sample t-tests can be run to compare with a hypothetical mean.
+
+```{r}
+t_test(gb_wide, Exam1 ~ 1, mu=0)
+t_test(gb_wide, Exam2 ~ 1, mu=0)
+```
+
+```{r, include=FALSE}
+knitr::write_bib(file = 'packages.bib')
+```
