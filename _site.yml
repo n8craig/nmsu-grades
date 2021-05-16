@@ -5,7 +5,7 @@ navbar:
     - text: "Home"
       href: index.html
     - text: "Canvas Grades Template"
-      href: /documents/Canvas_Grades_Template.html
+      href: Canvas_Grades_Template.html
     - text: "Links"
       href: Links.html
 output_dir: "docs"
