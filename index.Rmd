@@ -3,4 +3,4 @@ title: "Home"
 output: html_document
 ---
 
-Welcome to the page. This is some more stuff.
+This site covers information about using the `rcanvas` library to connect to NMSU's instance of Canvas. Issues explored include securly connecting to Canvas via the API, template files for exploring trends in exam grades, methods for downloading grades for a class over several semesters, and then exploring trends in these values.
