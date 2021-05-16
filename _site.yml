@@ -4,10 +4,6 @@ navbar:
   left:
     - text: "Home"
       href: index.html
-    - text: "Canvas Grades Template"
-      href: Canvas_Grades_Template.html
     - text: "Get Grades Multiple Classes"
       href: Canvas_Grades_Get_Grades_Multiple_Classes.html
-    - text: "Explore Grades Multiple Classes"
-      href: Canvas_Grades_Summarize_Classes.html
 output_dir: "docs"
