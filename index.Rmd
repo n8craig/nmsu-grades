@@ -5,7 +5,7 @@ output: html_document
 
 This site shows some ways of interacting with Canvas Learning Management System (LMS) by means of R. 
 
-The `R\exams` package is used to generate quiz zip files that can be imported into Canvas. This is much easier and faster than entering questions into Canvas's GUI.
+The `exams` package is used to generate quiz zip files that can be imported into Canvas. This is much easier and faster than entering questions into Canvas's GUI.
 
 The `rcanvas` library is used to connect to NMSU's instance of Canvas. The primary task is retrieving grade books. From there, the data are wrangled with `dplyr`, summarized, and graphed with `ggplot2` and `ggstatsplot`.
 

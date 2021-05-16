@@ -2,7 +2,7 @@
 
 This repository contains R Markdown files documenting techniques for interacting with NMSU's instance of Canvas by means of R. Topics include:
 
--   Creating and uploading exams with `R/exams`
+-   Creating and uploading exams with `exams`
 -   Accessing and wrangling grade books
 -   Exploratory Data Analysis of grades
 

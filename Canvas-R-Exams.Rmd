@@ -10,101 +10,136 @@ output:
     df_print: paged
 bibliography: [references.bib, packages.bib]
 ---
-# Using R/Exams to create simple single choice exam questions and import them into Canvas.
 
-R, R/Studio, and R/Exams must already be installed. Note, I had to set the PATH environment variable to get R/Studio to work properly.
+```{r, include=FALSE}
+library(DiagrammeR)
+library(exams)
+```
+
+# Introduction
+
+This document describes the process for using the `R/Exams` package for creating an exam composed of simple single choice questions, the creation of an export file, and its uploading for import into Canvas. The flow chart below gives a graphical overview of the process.
+
+```{r, echo=FALSE}
+mermaid("
+graph TB
+  A[Exam-Creation.Rmd]---B[question-template.Rmd]
+  B-->C[question001.Rmd]
+  B-->D[question002.Rmd]
+  B-->E[question003.Rmd]
+  C-->F[Exam Vector]
+  D-->F
+  E-->F
+  F-->G[HTML Version]
+  F-->H[Doc Version]
+  F-->I[Answer Key]
+  F-->J[QTI Zip]
+  J-->K[Upload QTI Zip File to Canvas]
+")
+```
+
+## Install Library and Dependencies
+
+It is assumed that [RStudio](https://www.rstudio.com/) is already installed, if not please install it. With RStudio running do the following:
+
+1.  In the library where the exam or exams are to be built for a given class, create a new RStudio project.
+2.  Create a new R Markdown file. It might be called something like `Exam-Creation.Rmd`. This file will be used for installing the library, copying the question template, building the exam, making temporary copies of the exam for proof reading, and finally generating the export file to upload to Canvas.
+3.  In the newly created R Markdown file, add the following chunk to install the `exams` package and load it. Note that once the package has been installed on a computer, this line can be removed or commented out.
+
+```{r, eval = FALSE}
+install.packages("exams", dependencies = TRUE)
+library(exams)
+```
+
+It is important to note that [pandoc](https://pandoc.org/) needs to be installed on the system. Unless there is a need to generate pdf output, everything should be ready to start building questions for an exam. See the R/Exams [instillation tutorial](http://www.r-exams.org/tutorials/installation/) for additional guidance in instillation issues.
 
 ## Question Format
 
-The template for single choice questions is below. The exsolution field lists the correct and incorrect answers as 1's and 0's respectively. The file must be saved as an `.Rmd` file or it will not work properly.
+While a single file is used to load the library and generate the exam, each individual exam question is written to its own separate R Markdown `.Rmd` file. These files are later combined together to build the exam. It is important that each exam question file is properly written. To facilitate consistency in file structure, and to save time it is recommended to use a template file. The following template is for single choice questions. Other templates are available in the R/Exams [First Steps](http://www.r-exams.org/tutorials/first_steps/) tutorial.
 
-```
-Question
-========
-Which answer is correct
+    Question
+    ========
+    Which answer is correct
 
-Answerlist
-----------
-* Answer 1
-* Answer 2
-* Answer 3
-* Answer 4
+    Answerlist
+    ----------
+    * Answer 1
+    * Answer 2
+    * Answer 3
+    * Answer 4
 
-Meta-information
-================
-exname: question2
-extype: schoice
-exsolution: 0010
-```
-Issues to consider when entering questions:
+    Meta-information
+    ================
+    exname: question2
+    extype: schoice
+    exsolution: 0010
 
-* `exname` is the question name.
-* `extype` is the question type
-* `exsolution` is the answer key. Each answer must be marked as correct `1` or incorrect `0`.
-* Make sure that there is no line between the `====` or the `---` and the text of the question, or answer list.
-* There should be only a single blank line after the question stem and after the answer list.
-* Spaces at the end of an answer can cause problems when building a test.
+A few pieces of `Meta-information` and general issues to consider are worth mentioning when writing and editing questions:
 
-# Creating Quetsions
+-   `exname` is the question name.
+-   `extype` is the question type. For simple single choice questions, `schoice` is the option to select.
+-   `exsolution` is the answer key. Each answer must be marked as correct `1` or incorrect `0`. In the sample file above, Answer 3 is the correct answer.
+-   Make sure that there is no blank line between the `====` or the `---` and the text of the question, or answer list.
+-   There should be only a single blank line after the question stem and after the answer list.
+-   Spaces at the end of an answer can cause problems when building a test. If there are trailing white spaces, the questions will not compile properly into an exam. Going back and finding these issues can be time consuming and frustrating. Preventing them in the first place helps tremendously. **Probably the best way to prevent and find unwanted white spaces or carriage returns is by enabling white space display in RStudio**. Enable white space display by going to: Tools \> Global Options \> Code \> Display \> tick the selection box to enable "Show white space characters" \> and click "OK".
 
-To copy the template file and create a new file in the same working directory and open it for editing:
+# Creating Questions
 
-```{r eval = F}
-file.copy("question01.Rmd", "question100.Rmd")
-file.edit("question100.Rmd")
-```
+In the main R Markdown file, the one we're calling `Exam-Creation.Rmd` create a new chunk and add the following code which can be used to copy the template file to create a new file in the same working directory, and open it for editing:
 
-# Building the exam, checking it, and exporting it to Canvas:
-
-1. In R/Studio, activate the R-exams `exams` package.
-1. Create a new R script.Use the example below.
-1. The script calls the `exams` package and sets the working directory. Note this will change depending on exam, and for windows the file path slashes need to be changed from back slash to forward slash.
-1. The script also creates a variable that contains a vector that includes all of the Rmarkdown files to be included in the exam.
-1. Lastly, the script calls `exams2canvas()` to create one or another kind of output. The onboard help for`exams2canvas()` is pretty clear. To call help `?exams2canvas()`.
-1. Ctrl+Shift+Enter to run the script, or run it line by line to test it.
-
-With RStudio running:
-
-```{r eval = F}
-library("exams")
-setwd("C:/Users/Nathan/OneDrive - New Mexico State University/Classes/Anth 125G S2020/exams/exam3")
-
-# Method 1: List the files literally
-# e <- c("Question01.Rmd", "Question02.Rmd")
-# Method 2: List the files based on extension
-e  <- list.files(pattern = "question.*.Rmd")
+```{r, eval=FALSE}
+    file.copy("question-template.Rmd", "question001.Rmd")
+    file.edit("question001.Rmd")
 ```
 
-Write the file to html to see that everything is ok
+I suggest numbering the questions as "question001.Rmd, question002.Rmd, etc." Doing this makes building an exam easier because the file pattern is simple. Just change the output file and file edit numbers for each new question to be created and run that chunk again.
 
-```{r eval = F}
-exams2html(e)
+As described below, it is possible to have Canvas randomize the order of answers when presenting the questions on a quiz. If randomizing the answer is desirable, avoid writing questions that rely on answers such as "all of the above" or "none of the above." Instead, use wording like "all of the answers" or "none of the answers."
+
+# Build an Exam and Check It
+
+1.  Create a new code chunk using the example below.
+2.  The code creates a variable `e` that contains a vector consisting of all the R Markdown files to be included in the exam. Method 1 (commented out) illustrates how to build the vector literally. Method 2 (preferable) shows how to use pattern matching to combine all Rmd files in the directory with the name `question`.
+3.  The code applies the function `exams2html()` and `exams2pandoc()` to the vector `e` to create html and .doc output for review. The onboard help for`exams2canvas()` is pretty clear. To call help `?exams2canvas()`.
+4.  The function `exams_metainfo(exams2pandoc(e))` is used to generate an exam key. This might be useful for proof reading and ensuring the answers are correct.
+5.  Ctrl+Shift+Enter to run the script, or run it line by line to test it.
+
+```{r, eval=FALSE}
+    # Method 1: List the files literally
+    # e <- c("Question01.Rmd", "Question02.Rmd")
+
+    # Method 2: List the files based on extension
+    e  <- list.files(pattern = "question.*.Rmd")
+
+    # Write file to html for a quick check to see everything is ok
+    exams2html(e)
+
+    # Write file to Word Doc just to have a copy all in one place.
+    exams2pandoc(e)
+
+    # Create an exam key for proofreading purposes.
+    # Copy the console output to a text file.
+    exams_metainfo(exams2pandoc(e))
 ```
 
-Write file to Word Doc just to have a copy all in one place.
+# Editing questions
 
-```{r eval = F}
-exams2pandoc(e)
-```
+-   If either `exams2html()` or `exams2pandoc()` do not run properly, provided pandoc is installed properly, the issue may be due to unwanted white spaces in the question (see above).
+-   When proof reading either an html or doc version of the exam and errors or corrections are found in a question or questions, it is possible to search through all of the \*.Rmd files in the current working directory using the `Edit` menu \>`Find in Files` option. Paste in the string or search term to identify which of the question files needs to be edited. RStudio will show which of the `questionXXX.Rmd` files needs to be edited.
+-   Once the necessary edits are made to the individual `questionXXX.Rmd` files and re-run the code chunk above to generate new output exams. Once the exam is in proper order, it is time to create an export file.
 
-Create an exam key for proofreading purposes. Copy the console output to a text file.
+# Create an Export File to Send to Canvas
 
-```{r eval = F}
-exams_metainfo(exams2pandoc(e))
-```
+To create an export file, apply the function `exams2canvas()`. This will generate a zipped QTI file which can be uploaded. At this stage, be sure to properly set how many points each question is worth. However, I think this can be adjusted in a Canvas question bank.
 
-Export the file to Canvas QTI file for upload. Be sure to properly set how many points each question is worth.
-
-```{r eval = F}
-# Export the exam to a zip file for Canvas
-exams2canvas(e, name = "tempquiz", points = 3)
+```{r, eval=FALSE}
+    # Export the exam to a zip file for Canvas
+    exams2canvas(e, name = "tempquiz", points = 3)
 ```
 
 When importing into canvas:
 
-* import the new questions into a temporary quiz.
-* create a new quiz and from the quiz create a new question group.
-* Link that question group to a question bank, set the correct number of questions and point value.
-
-# Editing questions
-* If errors or corrections are found in the question, it is possible to search through all of the *.Rmd files in the current working directory using the `Edit` menu >`Find in Files` option. Paste in the string or search term to identify which of the question files needs to be edited.
+-   Import the new questions into a temporary quiz.
+-   In Canvas, create a new quiz and from the quiz create a new question group.
+-   Link that question group to a question bank, set the correct number of questions and point value.
+-   It is possible to randomize the order of both the questions and the answers. If the plan is to randomize the answers.
