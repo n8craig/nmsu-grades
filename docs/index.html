@@ -239,7 +239,7 @@ $(document).ready(function () {
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="index.html">NMSU Canvas & R</a>
+      <a class="navbar-brand" href="index.html">Canvas & R</a>
     </div>
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
@@ -275,7 +275,7 @@ $(document).ready(function () {
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/n8craig/nmsu-grades">
-    <span class="fas fa-github"></span>
+    <span class="fa fa fa fa-github"></span>
      
   </a>
 </li>
@@ -293,7 +293,11 @@ $(document).ready(function () {
 </div>
 
 
-<p>This site covers information about using the <code>rcanvas</code> library to connect to NMSU’s instance of Canvas. Issues explored include securly connecting to Canvas via the API, template files for exploring trends in exam grades, methods for downloading grades for a class over several semesters, and then exploring trends in these values.</p>
+<p>This site shows some ways of interacting with Canvas Learning Management System (LMS) by means of R.</p>
+<p>The <code>R\exams</code> package is used to generate quiz zip files that can be imported into Canvas. This is much easier and faster than entering questions into Canvas’s GUI.</p>
+<p>The <code>rcanvas</code> library is used to connect to NMSU’s instance of Canvas. The primary task is retrieving grade books. From there, the data are wrangled with <code>dplyr</code>, summarized, and graphed with <code>ggplot2</code> and <code>ggstatsplot</code>.</p>
+<p>The original R Markdown files containing the code can be accessed at the corresponding GitHub <a href="https://github.com/n8craig/nmsu-grades">repository</a>.</p>
+<p><img src="index_files/figure-html/across-course-grades-1.png" width="672" /></p>
 
 
 

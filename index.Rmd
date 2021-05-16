@@ -3,4 +3,62 @@ title: "Home"
 output: html_document
 ---
 
-This site covers information about using the `rcanvas` library to connect to NMSU's instance of Canvas. Issues explored include securly connecting to Canvas via the API, template files for exploring trends in exam grades, methods for downloading grades for a class over several semesters, and then exploring trends in these values.
+This site shows some ways of interacting with Canvas Learning Management System (LMS) by means of R. 
+
+The `R\exams` package is used to generate quiz zip files that can be imported into Canvas. This is much easier and faster than entering questions into Canvas's GUI.
+
+The `rcanvas` library is used to connect to NMSU's instance of Canvas. The primary task is retrieving grade books. From there, the data are wrangled with `dplyr`, summarized, and graphed with `ggplot2` and `ggstatsplot`.
+
+The original R Markdown files containing the code can be accessed at the corresponding GitHub  [repository](https://github.com/n8craig/nmsu-grades).
+
+```{r Load-libraries, include=FALSE}
+# Read CSV file
+library(readr)
+
+# Data wrangling and formatting
+library(tidyverse)
+library(knitr)
+opts_chunk$set(comment=NA, prompt=FALSE, cache=FALSE, echo=TRUE, results='asis')
+
+# Plotting
+library(ggstatsplot)
+```
+
+
+```{r across-course-grades, echo=FALSE, message=FALSE, warning=FALSE}
+
+gb_list <- read_csv("data/gb_list.csv")
+
+gb_list <- gb_list %>% 
+  mutate(course_id = as_factor(course_id)) %>% 
+  mutate(course_name = as_factor(course_name))
+
+# order the factors properly
+gb_list$course_name <- factor(gb_list$course_name,
+                              levels= c(
+                                "ANTH-125G S19",
+                                "ANTH-125G F19",
+                                "HON-235G F19",
+                                "ANTH-125G S20",
+                                "ANTH-125G F20",
+                                "HON-235G F20",
+                                "ANTH-1140G S21",
+                                "HNRS-2161G S21"
+                              ))
+
+gb_list %>% 
+  group_by(course_name) %>% 
+  filter(str_detect(assignment_name, "^Exam1|^EXAM1")) %>%
+  ggbetweenstats(
+    data = .,
+    x = course_name,
+    y = score,
+    pairwise.comparisons = FALSE)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+    labs(
+    title = "Exam 1 Scores Across Intro Anthro Classes S19-S21",
+    x = "Course",
+    y = "Exam Score"
+  )
+```
+

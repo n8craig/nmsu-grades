@@ -1,7 +1,7 @@
 name: "NMSU Grades"
 output_dir: "docs"
 navbar:
-  title: "NMSU Canvas & R"
+  title: "Canvas & R"
   left:
     - text: "Home"
       href: index.html
@@ -18,4 +18,4 @@ navbar:
         href: Canvas_Grades_Summarize_Classes.html
   right:
     - href: https://github.com/n8craig/nmsu-grades
-      icon: fa-github
+      icon: fa fa-github
