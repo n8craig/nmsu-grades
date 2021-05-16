@@ -8,10 +8,6 @@ output:
     number_sections: yes
     df_print: paged
     link-citations: yes
-  html_notebook:
-    toc: yes
-    number_sections: yes
-    link-citations: yes
 bibliography: [references.bib, packages.bib]
 ---
 
@@ -64,7 +60,7 @@ course_list
 
 I am sure there is a programmatic way to do this (by means of a for loop, lapply, or map function in purrr) but I fiddled around and couldn't figure it out. Therefore, in this case it is hard coded. Note the following step takes more than 15 minutes.
 
-```{r echo=T, eval = F, message=FALSE, warning=FALSE, cache=TRUE, results='hide'}
+```{r echo=T, eval = F, message=FALSE, warning=FALSE, results='hide'}
 # Loading the grade book is pretty slow.
 # Assign grade book to a variable.
 gb_all_1244932 <- get_course_gradebook(1244932)

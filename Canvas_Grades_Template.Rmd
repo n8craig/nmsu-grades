@@ -6,10 +6,6 @@ output:
     number_sections: yes
     df_print: paged
     link-citations: yes
-  html_notebook:
-    toc: yes
-    number_sections: yes
-    link-citations: yes
 bibliography: [references.bib, packages.bib]
 ---
 

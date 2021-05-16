@@ -8,10 +8,6 @@ output:
     number_sections: yes
     df_print: paged
     link-citations: yes
-  html_notebook:
-    toc: yes
-    number_sections: yes
-    link-citations: yes
 bibliography: [references.bib, packages.bib]
 ---
 
@@ -35,7 +31,7 @@ library(ggstatsplot)
 
 # Load Data and Wrangle
 ```{r}
-gb_list <- read_csv("../data/gb_list.csv")
+gb_list <- read_csv("data/gb_list.csv")
 
 gb_list <- gb_list %>% 
   mutate(course_id = as_factor(course_id)) %>% 
