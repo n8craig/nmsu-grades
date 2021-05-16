@@ -9,9 +9,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
+<meta name="author" content="Nathan Craig" />
 
+<meta name="date" content="2020-08-09" />
 
-<title>Home</title>
+<title>Making Simple Multiple Choice Exams with R-Exams and Importing to Canvas</title>
 
 <script src="site_libs/header-attrs-2.7/header-attrs.js"></script>
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
@@ -32,6 +34,8 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet" />
+<script src="site_libs/pagedtable-1.1/js/pagedtable.js"></script>
 <link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
 
@@ -284,12 +288,103 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Home</h1>
+<h1 class="title toc-ignore">Making Simple Multiple Choice Exams with R-Exams and Importing to Canvas</h1>
+<h4 class="author">Nathan Craig</h4>
+<h4 class="date">9 August 2020</h4>
 
 </div>
 
+<div id="TOC">
+<ul>
+<li><a href="#using-rexams-to-create-simple-single-choice-exam-questions-and-import-them-into-canvas."><span class="toc-section-number">1</span> Using R/Exams to create simple single choice exam questions and import them into Canvas.</a>
+<ul>
+<li><a href="#question-format"><span class="toc-section-number">1.1</span> Question Format</a></li>
+</ul></li>
+<li><a href="#creating-quetsions"><span class="toc-section-number">2</span> Creating Quetsions</a></li>
+<li><a href="#building-the-exam-checking-it-and-exporting-it-to-canvas"><span class="toc-section-number">3</span> Building the exam, checking it, and exporting it to Canvas:</a></li>
+<li><a href="#editing-questions"><span class="toc-section-number">4</span> Editing questions</a></li>
+</ul>
+</div>
 
-<p>This site covers information about using the <code>rcanvas</code> library to connect to NMSU’s instance of Canvas. Issues explored include securly connecting to Canvas via the API, template files for exploring trends in exam grades, methods for downloading grades for a class over several semesters, and then exploring trends in these values.</p>
+<div id="using-rexams-to-create-simple-single-choice-exam-questions-and-import-them-into-canvas." class="section level1" number="1">
+<h1 number="1"><span class="header-section-number">1</span> Using R/Exams to create simple single choice exam questions and import them into Canvas.</h1>
+<p>R, R/Studio, and R/Exams must already be installed. Note, I had to set the PATH environment variable to get R/Studio to work properly.</p>
+<div id="question-format" class="section level2" number="1.1">
+<h2 number="1.1"><span class="header-section-number">1.1</span> Question Format</h2>
+<p>The template for single choice questions is below. The exsolution field lists the correct and incorrect answers as 1’s and 0’s respectively. The file must be saved as an <code>.Rmd</code> file or it will not work properly.</p>
+<pre><code>Question
+========
+Which answer is correct
+
+Answerlist
+----------
+* Answer 1
+* Answer 2
+* Answer 3
+* Answer 4
+
+Meta-information
+================
+exname: question2
+extype: schoice
+exsolution: 0010</code></pre>
+<p>Issues to consider when entering questions:</p>
+<ul>
+<li><code>exname</code> is the question name.</li>
+<li><code>extype</code> is the question type</li>
+<li><code>exsolution</code> is the answer key. Each answer must be marked as correct <code>1</code> or incorrect <code>0</code>.</li>
+<li>Make sure that there is no line between the <code>====</code> or the <code>---</code> and the text of the question, or answer list.</li>
+<li>There should be only a single blank line after the question stem and after the answer list.</li>
+<li>Spaces at the end of an answer can cause problems when building a test.</li>
+</ul>
+</div>
+</div>
+<div id="creating-quetsions" class="section level1" number="2">
+<h1 number="2"><span class="header-section-number">2</span> Creating Quetsions</h1>
+<p>To copy the template file and create a new file in the same working directory and open it for editing:</p>
+<pre class="r"><code>file.copy(&quot;question01.Rmd&quot;, &quot;question100.Rmd&quot;)
+file.edit(&quot;question100.Rmd&quot;)</code></pre>
+</div>
+<div id="building-the-exam-checking-it-and-exporting-it-to-canvas" class="section level1" number="3">
+<h1 number="3"><span class="header-section-number">3</span> Building the exam, checking it, and exporting it to Canvas:</h1>
+<ol style="list-style-type: decimal">
+<li>In R/Studio, activate the R-exams <code>exams</code> package.</li>
+<li>Create a new R script.Use the example below.</li>
+<li>The script calls the <code>exams</code> package and sets the working directory. Note this will change depending on exam, and for windows the file path slashes need to be changed from back slash to forward slash.</li>
+<li>The script also creates a variable that contains a vector that includes all of the Rmarkdown files to be included in the exam.</li>
+<li>Lastly, the script calls <code>exams2canvas()</code> to create one or another kind of output. The onboard help for<code>exams2canvas()</code> is pretty clear. To call help <code>?exams2canvas()</code>.</li>
+<li>Ctrl+Shift+Enter to run the script, or run it line by line to test it.</li>
+</ol>
+<p>With RStudio running:</p>
+<pre class="r"><code>library(&quot;exams&quot;)
+setwd(&quot;C:/Users/Nathan/OneDrive - New Mexico State University/Classes/Anth 125G S2020/exams/exam3&quot;)
+
+# Method 1: List the files literally
+# e &lt;- c(&quot;Question01.Rmd&quot;, &quot;Question02.Rmd&quot;)
+# Method 2: List the files based on extension
+e  &lt;- list.files(pattern = &quot;question.*.Rmd&quot;)</code></pre>
+<p>Write the file to html to see that everything is ok</p>
+<pre class="r"><code>exams2html(e)</code></pre>
+<p>Write file to Word Doc just to have a copy all in one place.</p>
+<pre class="r"><code>exams2pandoc(e)</code></pre>
+<p>Create an exam key for proofreading purposes. Copy the console output to a text file.</p>
+<pre class="r"><code>exams_metainfo(exams2pandoc(e))</code></pre>
+<p>Export the file to Canvas QTI file for upload. Be sure to properly set how many points each question is worth.</p>
+<pre class="r"><code># Export the exam to a zip file for Canvas
+exams2canvas(e, name = &quot;tempquiz&quot;, points = 3)</code></pre>
+<p>When importing into canvas:</p>
+<ul>
+<li>import the new questions into a temporary quiz.</li>
+<li>create a new quiz and from the quiz create a new question group.</li>
+<li>Link that question group to a question bank, set the correct number of questions and point value.</li>
+</ul>
+</div>
+<div id="editing-questions" class="section level1" number="4">
+<h1 number="4"><span class="header-section-number">4</span> Editing questions</h1>
+<ul>
+<li>If errors or corrections are found in the question, it is possible to search through all of the *.Rmd files in the current working directory using the <code>Edit</code> menu &gt;<code>Find in Files</code> option. Paste in the string or search term to identify which of the question files needs to be edited.</li>
+</ul>
+</div>
 
 
 

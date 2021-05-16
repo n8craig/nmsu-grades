@@ -34,6 +34,8 @@
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <link href="site_libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet" />
 <script src="site_libs/pagedtable-1.1/js/pagedtable.js"></script>
+<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -269,17 +271,34 @@ $(document).ready(function () {
   <a href="index.html">Home</a>
 </li>
 <li>
-  <a href="Canvas_Grades_Template.html">Course EDA Template</a>
+  <a href="Canvas-R-Exams.html">Create and Upload Exams</a>
 </li>
-<li>
-  <a href="Canvas_Grades_Get_Grades_Multiple_Classes.html">Get Grades Multiple Classes</a>
-</li>
-<li>
-  <a href="Canvas_Grades_Summarize_Classes.html">Summarize Multiple Classes</a>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Grades
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="Canvas_Grades_Template.html">Course EDA Template</a>
+    </li>
+    <li>
+      <a href="Canvas_Grades_Get_Grades_Multiple_Classes.html">Get Grades Multiple Classes</a>
+    </li>
+    <li>
+      <a href="Canvas_Grades_Summarize_Classes.html">Summarize Multiple Classes</a>
+    </li>
+  </ul>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
-        
+        <li>
+  <a href="https://github.com/n8craig/nmsu-grades">
+    <span class="fas fa-github"></span>
+     
+  </a>
+</li>
       </ul>
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
@@ -332,8 +351,8 @@ $(document).ready(function () {
 
 <div id="introduction" class="section level1" number="1">
 <h1 number="1"><span class="header-section-number">1</span> Introduction</h1>
-<p>This document contains sample code to: connect to Canvas using the <code>rcanvas</code> package <span class="citation">(Ranzolin, Hua, and Hathaway 2021)</span>, retrieve grade books, wrangle them into shape, and perform some basic exploratory data analysis.</p>
-<p>The <code>rcanvas</code> package provides an R interface retrieve a class list and grade books for individual classes. The code below illustrates one way to establish a safe connection to Canvas, generate a class list, wrangle the data into a useful shape <span class="citation">(Wickham 2019)</span>, and look at trends in the scores <span class="citation">(Wickham et al. 2020; Patil 2021)</span> through a process of exploratory data analysis (EDA) <span class="citation">(Tukey 1977)</span>.</p>
+<p>This document contains sample code to: connect to Canvas using the <code>rcanvas</code> package <span class="citation">(Ranzolin, Hua, and Hathaway 2021)</span>, retrieve grade books, wrangle them into shape, and perform some basic exploratory data analysis (EDA) <span class="citation">(Tukey 1977)</span>.</p>
+<p>The <code>rcanvas</code> package provides an R interface retrieve a class list and grade books for individual classes. The code below illustrates one way to establish a safe connection to Canvas, generate a class list, wrangle the data into a useful shape <span class="citation">(Wickham 2019)</span>, and look at trends in the scores <span class="citation">(Wickham et al. 2020; Patil 2021)</span>.</p>
 </div>
 <div id="load-libraries" class="section level1" number="2">
 <h1 number="2"><span class="header-section-number">2</span> Load Libraries</h1>

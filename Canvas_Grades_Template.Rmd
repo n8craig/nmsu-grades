@@ -11,9 +11,9 @@ bibliography: [references.bib, packages.bib]
 
 # Introduction
 
-This document contains sample code to: connect to Canvas using the `rcanvas` package [@R-rcanvas], retrieve grade books, wrangle them into shape, and perform some basic exploratory data analysis.
+This document contains sample code to: connect to Canvas using the `rcanvas` package [@R-rcanvas], retrieve grade books, wrangle them into shape, and perform some basic exploratory data analysis (EDA) [@tukey1977].
 
-The `rcanvas` package provides an R interface retrieve a class list and grade books for individual classes. The code below illustrates one way to establish a safe connection to Canvas, generate a class list, wrangle the data into a useful shape [@R-tidyverse], and look at trends in the scores [@R-ggplot2; @R-ggstatsplot] through a process of exploratory data analysis (EDA) [@tukey1977].
+The `rcanvas` package provides an R interface retrieve a class list and grade books for individual classes. The code below illustrates one way to establish a safe connection to Canvas, generate a class list, wrangle the data into a useful shape [@R-tidyverse], and look at trends in the scores [@R-ggplot2; @R-ggstatsplot].
 
 # Load Libraries
 

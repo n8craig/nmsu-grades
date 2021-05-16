@@ -1,0 +1,110 @@
+---
+title: "Making Simple Multiple Choice Exams with R-Exams and Importing to Canvas"
+author: "Nathan Craig"
+date: "9 August 2020"
+output:
+  html_document:
+    toc: yes
+    number_sections: yes
+    link-citations: yes
+    df_print: paged
+bibliography: [references.bib, packages.bib]
+---
+# Using R/Exams to create simple single choice exam questions and import them into Canvas.
+
+R, R/Studio, and R/Exams must already be installed. Note, I had to set the PATH environment variable to get R/Studio to work properly.
+
+## Question Format
+
+The template for single choice questions is below. The exsolution field lists the correct and incorrect answers as 1's and 0's respectively. The file must be saved as an `.Rmd` file or it will not work properly.
+
+```
+Question
+========
+Which answer is correct
+
+Answerlist
+----------
+* Answer 1
+* Answer 2
+* Answer 3
+* Answer 4
+
+Meta-information
+================
+exname: question2
+extype: schoice
+exsolution: 0010
+```
+Issues to consider when entering questions:
+
+* `exname` is the question name.
+* `extype` is the question type
+* `exsolution` is the answer key. Each answer must be marked as correct `1` or incorrect `0`.
+* Make sure that there is no line between the `====` or the `---` and the text of the question, or answer list.
+* There should be only a single blank line after the question stem and after the answer list.
+* Spaces at the end of an answer can cause problems when building a test.
+
+# Creating Quetsions
+
+To copy the template file and create a new file in the same working directory and open it for editing:
+
+```{r eval = F}
+file.copy("question01.Rmd", "question100.Rmd")
+file.edit("question100.Rmd")
+```
+
+# Building the exam, checking it, and exporting it to Canvas:
+
+1. In R/Studio, activate the R-exams `exams` package.
+1. Create a new R script.Use the example below.
+1. The script calls the `exams` package and sets the working directory. Note this will change depending on exam, and for windows the file path slashes need to be changed from back slash to forward slash.
+1. The script also creates a variable that contains a vector that includes all of the Rmarkdown files to be included in the exam.
+1. Lastly, the script calls `exams2canvas()` to create one or another kind of output. The onboard help for`exams2canvas()` is pretty clear. To call help `?exams2canvas()`.
+1. Ctrl+Shift+Enter to run the script, or run it line by line to test it.
+
+With RStudio running:
+
+```{r eval = F}
+library("exams")
+setwd("C:/Users/Nathan/OneDrive - New Mexico State University/Classes/Anth 125G S2020/exams/exam3")
+
+# Method 1: List the files literally
+# e <- c("Question01.Rmd", "Question02.Rmd")
+# Method 2: List the files based on extension
+e  <- list.files(pattern = "question.*.Rmd")
+```
+
+Write the file to html to see that everything is ok
+
+```{r eval = F}
+exams2html(e)
+```
+
+Write file to Word Doc just to have a copy all in one place.
+
+```{r eval = F}
+exams2pandoc(e)
+```
+
+Create an exam key for proofreading purposes. Copy the console output to a text file.
+
+```{r eval = F}
+exams_metainfo(exams2pandoc(e))
+```
+
+Export the file to Canvas QTI file for upload. Be sure to properly set how many points each question is worth.
+
+```{r eval = F}
+# Export the exam to a zip file for Canvas
+exams2canvas(e, name = "tempquiz", points = 3)
+```
+
+When importing into canvas:
+
+* import the new questions into a temporary quiz.
+* create a new quiz and from the quiz create a new question group.
+* Link that question group to a question bank, set the correct number of questions and point value.
+
+# Editing questions
+* If errors or corrections are found in the question, it is possible to search through all of the *.Rmd files in the current working directory using the `Edit` menu >`Find in Files` option. Paste in the string or search term to identify which of the question files needs to be edited.
