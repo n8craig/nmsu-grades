@@ -5,6 +5,7 @@ navbar:
   left:
     - text: "Home"
       href: index.html
+      icon: fa-home
     - text: "Create and Upload Exams"
       href: Canvas-R-Exams.html
     - text: Grades
