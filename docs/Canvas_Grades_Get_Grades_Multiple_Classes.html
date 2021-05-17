@@ -62,6 +62,28 @@ if (window.hljs) {
 
 
 
+<style type="text/css">
+/* for pandoc --citeproc since 2.11 */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
 
 
 
@@ -265,7 +287,7 @@ $(document).ready(function () {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="Canvas_Grades_Template.html">Course EDA Template</a>
+      <a href="Canvas_Grades_Template.html">Single Course EDA</a>
     </li>
     <li>
       <a href="Canvas_Grades_Get_Grades_Multiple_Classes.html">Get Grades Multiple Classes</a>
@@ -305,10 +327,11 @@ $(document).ready(function () {
 <ul>
 <li><a href="#get-all-of-one-type-of-class"><span class="toc-section-number">2.1</span> Get all of one type of class</a></li>
 </ul></li>
+<li><a href="#references">References</a></li>
 </ul>
 </div>
 
-<p>The following blocks of code demonstrate one method for extracting gradebooks from multiple classes and binding them into a single data frame. Since the process of downloading multiple data frames from Canvas can take a while, more than 15 minutes with eight classes, this retrieval portion of the process is separated from the exploratory portion of the process which is detailed in a separate file.</p>
+<p>The following blocks of code demonstrate one method for extracting grade books from multiple classes and binding them into a single data frame. The <code>rcanvas</code> package <span class="citation">(Ranzolin, Hua, and Hathaway 2021)</span> is used to connect to Canvas and retrieve the grade books from multiple comparable classes. Since the process of downloading multiple data frames from Canvas can take a while, more than 15 minutes with eight classes, this retrieval portion of the process is separated from the exploratory portion of the process which is detailed in a separate file.</p>
 <div id="load-libraries" class="section level1" number="1">
 <h1 number="1"><span class="header-section-number">1</span> Load Libraries</h1>
 <pre class="r"><code># Safely store credentials
@@ -329,6 +352,8 @@ library(ggstatsplot)</code></pre>
 </div>
 <div id="establish-connection-to-canvas" class="section level1" number="2">
 <h1 number="2"><span class="header-section-number">2</span> Establish Connection to Canvas</h1>
+<p>To connect to Canvas, one must establish a Canvas token. Instructions for doing this can be found at the <code>rcanvas</code> package <a href="https://github.com/daranzolin/rcanvas">repository</a>.</p>
+<p>To avoid writing credentials into the script, the <code>keyring</code> <span class="citation">(Csárdi 2021)</span> library is used. The credential entry for Canvas was created in a separate step. Instructions for making <code>keyring</code> entries can be found at the R-bloggers <a href="https://www.r-bloggers.com/2019/06/how-to-hide-a-password-in-r-with-the-keyring-package/">website.</a>.</p>
 <pre class="r"><code># Enter token, set domain, and get class list
 canvas_token &lt;- key_get(&quot;canvas-token&quot;, &quot;nmc&quot;)
 set_canvas_token(token = canvas_token)
@@ -347,6 +372,7 @@ course_list</code></pre>
 </div>
 <div id="get-all-of-one-type-of-class" class="section level2" number="2.1">
 <h2 number="2.1"><span class="header-section-number">2.1</span> Get all of one type of class</h2>
+<p>Use a <code>grepl</code> statement to filter the course list down to a subset of comparable classes.</p>
 <pre class="r"><code>course_list &lt;- course_list %&gt;% 
   filter(.,grepl(&quot;ANTH-125G|HON-235G|ANTH-1140G|HNRS-2161G&quot;, name))
 course_list</code></pre>
@@ -355,7 +381,7 @@ course_list</code></pre>
 {"columns":[{"label":["id"],"name":[1],"type":["int"],"align":["right"]},{"label":["name"],"name":[2],"type":["chr"],"align":["left"]}],"data":[{"1":"1244932","2":"2019 Fall - ANTH-125G-M01-INTRO WORLD CULTURES"},{"1":"1246789","2":"2019 Fall - HON-235G-M01-WINDOW ON HUMANITY"},{"1":"1207030","2":"2019 Spring - ANTH-125G-M01-INTRO WORLD CULTURES"},{"1":"1314867","2":"2020 Fall - ANTH-125G-M01-INTRO WORLD CULTURES"},{"1":"1312607","2":"2020 Fall - HON-235G-M01-WINDOW ON HUMANITY"},{"1":"1273540","2":"2020 Spring - ANTH-125G-M02-INTRO WORLD CULTURES"},{"1":"1346300","2":"2021 Spring - ANTH-1140G-M80-INTRO TO CULTURAL ANTH"},{"1":"1345426","2":"2021 Spring - HNRS-2161G-M80-WINDOW OF HUMANITY"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
-<p>I am sure there is a programmatic way to do this (by means of a for loop, lapply, or map function in purrr) but I fiddled around and couldn’t figure it out. Therefore, in this case it is hard coded. Note the following step takes more than 15 minutes.</p>
+<p>With the subset list of classes, use the <code>rcanvas</code> function <code>get_course_gradebook()</code> to retrieve the grade book for each relevant class. In the example below, this is hard coded. It is not the optimal work flow. I am sure there is a programmatic way to do this (by means of a for loop, lapply, or map function in purrr). However, I fiddled around and couldn’t figure it out. If someone knows a better method, please open an issue in the repository and I will incorporate any working suggestions. Lacking the knowledge of how to do this programmatically, in this case the workaround solution is hard coding. Note the following step takes more than 15 minutes.</p>
 <pre class="r"><code># Loading the grade book is pretty slow.
 # Assign grade book to a variable.
 gb_all_1244932 &lt;- get_course_gradebook(1244932)
@@ -366,6 +392,7 @@ gb_all_1312607 &lt;- get_course_gradebook(1312607)
 gb_all_1273540 &lt;- get_course_gradebook(1273540)
 gb_all_1346300 &lt;- get_course_gradebook(1346300)
 gb_all_1345426 &lt;- get_course_gradebook(1345426)</code></pre>
+<p>Once each of the grade books is retrieved and assigned to a variable, use the <code>dplyr</code> function to add a new column with the appropriate course name. Again, it is no doubt possible to perform this task with a function. If anyone has an idea about how to do this better please open an issue in the repository with a suggestion, I will hapily incorporate it, and provide attribution.</p>
 <pre class="r"><code># Add a course name column to each data frame
 gb_all_1244932 &lt;- gb_all_1244932 %&gt;% 
   mutate(course_name = &quot;ANTH-125G F19&quot;)
@@ -390,6 +417,7 @@ gb_all_1346300 &lt;- gb_all_1346300 %&gt;%
 
 gb_all_1345426 &lt;- gb_all_1345426 %&gt;% 
   mutate(course_name = &quot;HNRS-2161G S21&quot;)</code></pre>
+<p>With all of the grade books downloaded, the <code>course_name</code> column added, now it is converted into a list.</p>
 <pre class="r"><code># Bind the data frames into a list.
 gb_list &lt;- list(gb_all_1244932,
                 gb_all_1246789,
@@ -401,7 +429,7 @@ gb_list &lt;- list(gb_all_1244932,
                 gb_all_1345426)
 
 gb_list</code></pre>
-<p>Create a function and apply it to the list of data frames.</p>
+<p>A function is created to do several data wrangling tasks including: - create an anonymous student ID (<code>anon_id</code>) based on two existing columns - subsetting the columns - removing the “test student” which has no <code>anon_id</code> - converting <code>assignment_name</code>, <code>course_id</code>, and <code>course_name</code> to factors</p>
 <pre class="r"><code># Apply a function that cleans the raw data.
 # Given that the data are written to cvs, the as_factor functions may not be necessary.
 prepR &lt;- function(x){
@@ -422,17 +450,32 @@ prepR &lt;- function(x){
   mutate(course_id = as_factor(course_id)) %&gt;% 
   mutate(course_name = as_factor(course_name))
 }</code></pre>
+<p>Use the <code>purrr</code> package that is part of the <code>tidyverse</code> to <code>map()</code> the previously defined function to the list of dataframes.</p>
 <pre class="r"><code># Apply the function to the list of grade books.
 gb_list &lt;- map(gb_list, ~prepR(.))
 gb_list</code></pre>
+<p>Use the <code>bind_rows()</code> function to convert the list of dataframes into one single long form dataframe.</p>
 <pre class="r"><code># Bind each of the grade books in the list into a single dataframe
 gb_list &lt;- gb_list %&gt;% 
   bind_rows()</code></pre>
+<p>Review the dataframe to make sure everything is ok.</p>
 <pre class="r"><code># Spot check the data frame
 gb_list</code></pre>
+<p>Given that the data retrieval process takes a long time, save the resulting wrangled dataframe to a csv file.</p>
 <pre class="r"><code># Save the dataframe to a csv file.
 write.csv(gb_list, &quot;../data/gb_list.csv&quot;)</code></pre>
 <p>From here with the file saved, one can move on to exploration and analysis. This is performed in another notebook.</p>
+</div>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1 class="unnumbered">References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-R-keyring" class="csl-entry">
+Csárdi, Gábor. 2021. <em>Keyring: Access the System Credential Store from r</em>. <a href="https://CRAN.R-project.org/package=keyring">https://CRAN.R-project.org/package=keyring</a>.
+</div>
+<div id="ref-R-rcanvas" class="csl-entry">
+Ranzolin, David, Chris Hua, and J. Hathaway. 2021. <em>Rcanvas: R Client for Canvas API</em>. <a href="https://github.com/daranzolin/rcanvas">https://github.com/daranzolin/rcanvas</a>.
+</div>
 </div>
 </div>
 

@@ -1,5 +1,5 @@
 ---
-title: "Canvas Grades"
+title: "Single Course EDA"
 output:
   html_document:
     toc: yes
@@ -11,11 +11,15 @@ bibliography: [references.bib, packages.bib]
 
 # Introduction
 
-This document contains sample code to: connect to Canvas using the `rcanvas` package [@R-rcanvas], retrieve grade books, wrangle them into shape, and perform some basic exploratory data analysis (EDA) [@tukey1977].
+This document contains sample code to: connect to Canvas using the `rcanvas` package [@R-rcanvas], retrieve grade books, wrangle them into shape, and perform some initial exploratory data analysis (EDA) [@tukey1977].
 
-The `rcanvas` package provides an R interface retrieve a class list and grade books for individual classes. The code below illustrates one way to establish a safe connection to Canvas, generate a class list, wrangle the data into a useful shape [@R-tidyverse], and look at trends in the scores [@R-ggplot2; @R-ggstatsplot].
+The `rcanvas` package provides an R interface to retrieve a class list and grade books for individual classes. The code below illustrates one way to establish a safe connection to Canvas, generate a class list, wrangle the data into a useful shape [@R-tidyverse], and look at trends in the scores [@R-ggplot2; @R-ggstatsplot]. First we will load the necessary libraries.
 
-# Load Libraries
+# Preliminaries
+
+Often times, 80% of data analysis involves setting up the environment and data wrangling. That is not so different in this case.
+
+## Load Libraries
 
 ```{r message=FALSE, warning=FALSE}
 # Safely store credentials
@@ -33,6 +37,7 @@ opts_chunk$set(comment=NA, prompt=FALSE, cache=FALSE, echo=TRUE, results='asis')
 # Plotting
 library(ggplot2)
 library(ggstatsplot)
+library(qqplotr)
 
 # stats
 library(rstatix)
@@ -47,13 +52,13 @@ st_options(bootstrap.css     = FALSE,       # Already part of the theme so no ne
                                             # For other themes, using TRUE might be preferable.
 ```
 
-# Establish Connection to canvas
+## Establish Connection to canvas
 
 Connecting to Canvas requires an access token. As described in the `rcanvas` [documentation](https://github.com/daranzolin/rcanvas), to establish an access code, sign into canvas and go to: `Canvas -> Account -> Settings -> Approved Integrations -> Add new token`
 
 The token is then added as an argument to the `set_canvas_token()` argument. It is unwise to hard code an API token into the code. One option is to rely on the rstudioapi::askForPassword() function. The function `rstudioapi::askForPassword("Canvas API Token")` is assigned to a variable and passed to `set_canvas_token()`. Another option is to use the `keyring` library, store the credentials, and then call them. Following [instructions](https://db.rstudio.com/best-practices/managing-credentials/) provided at RStudio, the latter appraoch is employed here.
 
-Connecting to canvas also requires setting the Canvas domain. This is done with the `set_canvas_domain()` function. With the token and domain set, it is possible to pull up a class list. The full class list table contains way more variables than necessary. Below, the key variables class name and id are selected and output as a table.
+Connecting to canvas also requires setting the Canvas domain. This is done with the `set_canvas_domain()` function. With the token and domain set, it is possible to pull up a class list. The full class list table contains way more variables than are useful at this stage. Below, the key variables, class name, and id are selected and output as a table. This is done using a pipe which does not store the object in a variable or permanently alter it in any way.
 
 ```{r}
 # Enter token, set domain, and get class list
@@ -70,7 +75,9 @@ get_course_list() %>%
 
 # Select Class and Get Master Grade Book
 
-For this sample, I've chosen "1273540 2020 Spring - ANTH-125G-M02-INTRO WORLD CULTURES." With the class selected, one can use the `get_course_gradebook()` function to pull the gradebook for the class. Note that it takes quite some time to pull the master grade book, and at least in my case it contains several hundred columns. Given that it takes so long to pull down the grades, and the table requires a bit of wrangling, I suggest saving the master gradebook to a variable that can be called up without having to reload from the server.
+For this sample, I've chosen "1273540 2020 Spring - ANTH-125G-M02-INTRO WORLD CULTURES." With the class selected, one can use the `get_course_gradebook()` function to pull the grade book for the class. Note that it takes quite some time to pull the master grade book, and at least in my case it contains several hundred columns. Given that it takes so long to pull down the grades, and the table requires a bit of wrangling, I suggest saving the master grade book to a variable that can be called up without having to reload from the server.
+
+To perform the analysis on a different class, just insert the `id` that corresponds to the desired course. Provided that assignments are named consistently, most the code will not need to be changed. This facilitates quickly generating reports across different classes.
 
 ```{r echo=T, results='hide', message=FALSE, warning=FALSE}
 # Loading the grade book is pretty slow.
@@ -80,7 +87,7 @@ gb_all <- get_course_gradebook(1273540)
 
 ## Remove Unwanted Columns and Inspect Others
 
-At least in my case, the institution has subscribed to Turnitin. The master grade book for recent courses contains over 500 columns, all but about 32 of which are part of Turnitin and not of much interest for EDA of grades. In fact, the first couple of times I looked at the master grade book with all of the columns, I couldn't find the most important one--the grades for individual assignments. I found that identifying useful columns was much easier once the hundreds of Turnitin columns were removed.
+At least in my case, the institution has subscribed to Turnitin. After the subscription to Turnitin, the master grade book for recent courses contains over 500 columns. All but about 32 of these columns are part of Turnitin and not of much interest for EDA of grades. In fact, the first couple of times I looked at the master grade book with all of the columns, I couldn't find the most important one--the grades for individual assignments. I found that identifying useful columns was much easier once the hundreds of Turnitin columns were removed.
 
 Older classes, before Turnitin was added don't have as many columns. However, running these lines of code below to strip out Turnitin columns isn't a problem.
 
@@ -96,7 +103,9 @@ colnames(gb)
 
 ## Create Anon ID and Select Necessary Columns
 
-For purposes of the Family Educational Rights and Privacy Act (FERPA), it is critical to ensure student anonymity. The code below strips white space out of the assignment names and constructs an anonymous ID. Canvas also creates a "test student' and this individual needs to be removed. Additionally, if students didn't take a quiz or exam and a 0 was not manually filled in one needs to be added. Lastly, assignment names are turned into a factor.
+Student names and ID's are contained in the master grade book. For purposes of the Family Educational Rights and Privacy Act (FERPA), it is critical to ensure student anonymity. Therefore, student names and ID's must be removed. The code below strips white space out of the assignment names and constructs an anonymous ID.
+
+Canvas also creates a "test student' and this individual needs to be removed or it will modify results in unwanted ways. Additionally, if students didn't take a quiz or exam and a 0 was not manually filled in one needs to be added. Lastly, assignment names are turned into a factor.
 
 ```{r}
 # Remove whitespace from assignment names
@@ -119,7 +128,7 @@ gb <- gb %>%
 
 ## Filter Syntax for Assignments
 
-The grade book is in "long" rather than "wide" format. If the quizzes and assignments are named properly, it is a simple matter to use a very basic regular expression to filter on the classes of items that are of interest. Such filters can be included in pipelines for various kinds of analyses or or graphing operations.
+The grade book is in "narrow" rather than "wide" [format](https://en.wikipedia.org/wiki/Wide_and_narrow_data). If the quizzes and assignments are named properly, it is a simple matter to use a very basic regular expression to filter on the classes of items that are of interest. Such filters can be included in pipelines for various kinds of analyses or or graphing operations.
 
 ```{r}
 # Get Exams
@@ -130,11 +139,14 @@ gb %>% filter(str_detect(assignment_name, "^Quiz"))
 
 # Get films
 gb %>% filter(str_detect(assignment_name, "^Film"))
+
+# Remove quizzes but keep all others
+gb %>% filter(str_detect(assignment_name, "Attendance$", negate = TRUE))
 ```
 
 ## Get Assignment Counts
 
-Some kinds of analyses require a consistent number of items across various data collection events (Exams, Quizzes, etc). The function below is a really easy way to count the number of items in each instance of a type of assignment. In this case, there are three exams: Exam1, Exam2, and Exam3. Using a regular expression to pull up all exams and summarizing a count shows how many grades are recorded for each exam.
+Some kinds of analyses require a consistent number of items across various data collection events (Exams, Quizzes, etc). The function below is a really easy way to count the number of items in each instance of a type of assignment. In this case, there are three exams: Exam1, Exam2, and Exam3. Using a regular expression to pull up all exams and summarizing a count shows how many grades are recorded for each exam. If there are irregularities, these can be examined using the `View()` function.
 
 ```{r}
 gb %>% 
@@ -145,7 +157,7 @@ gb %>%
 
 ## Prepare Data and Create Attendance Score from Daily Attendance Quizzes
 
-I take attendance by using very brief attendance quizzes at the start of class. This automates the process of people marking themselves present. A Cumulative Attendance score can be created by added up the sum of each day's attendance quiz. In addition to being well suited for regression analysis performed below, having data in a "wide" format is a convienant way to sum across each day's attendance score to generate a Cumulative Attendance. The `tidyverse` function `pivot_wider()` was used for this task. Below the data are pivoted to wide format and the column numbers are retrieved.
+I take attendance by using very brief attendance quizzes at the start of class. This automates the process of people marking themselves present. A Cumulative Attendance score can be created by adding up the sum of each day's attendance quiz. In addition to being well suited for regression analysis performed below, having data in a "wide" format is a convenient way to sum across each day's attendance score to generate a Cumulative Attendance. The `tidyverse` function `pivot_wider()` was used for this task. Below the data are pivoted to wide format and the column numbers are retrieved.
 
 ```{r}
 gb_wide <- gb %>% 
@@ -153,24 +165,38 @@ gb_wide <- gb %>%
 colnames(gb_wide)
 ```
 
-Once pivoted wide, using index location determined above, a sum is calculated across all of the Attendance Quiz columns and then each of the individual quizzes are dropped. Now the data are in wide format with each exam in its own column along with a Cumulative Attendance score.
+Once pivoted wide, using the index location determined above, a sum is calculated across all of the Attendance Quiz columns and then each of the individual quizzes are dropped. Now the data are in wide format with each exam in its own column along with a Cumulative Attendance score.
 
 ```{r}
-gb_wide <-gb_wide %>% 
+gb_wide <- gb_wide %>% 
   mutate(attendance = select(.,7:34) %>% 
            rowSums(),
          .after = course_id) %>% 
   select(.,-(7:34))
 ```
 
-# Summary Values
+On the wide data frame, the same approach can be used to get a grand total
+
+```{r}
+gb_wide <- gb_wide %>% 
+  mutate(grand_total = select(.,3:16) %>% 
+            rowSums()
+          )
+```
+
+
+
+# Data Summary and Visualization
 
 Pulling up the summary values is a good place to start.
 
 ```{r}
 gb_wide %>% 
-  select(attendance, Exam1, Exam2, Exam3) %>% 
-  descr()
+  select(attendance, Exam1, Exam2, Exam3, grand_total) %>% 
+  descr() %>% 
+  tb() %>% 
+  kable(format = "html", digits = 2) %>% 
+  kable_styling(bootstrap_options = "striped")
 ```
 
 # Graph Results and Identify Outliers
@@ -179,12 +205,15 @@ The library `ggstatsplot` provides a covenant way to report histograms, central 
 
 ## Exam 1
 
+We begin with a histogram of Exam 1 scores. The `gghistostats()` function provides a frequentist statistical report at the top and a baysian analysis at the bottom. In this case, the frequentist analysis is a one sample t-test and a Hedges G for effect size estimates with confidence intervals. The test value for the one sample t-test is 112 (150 point exam * 0.75 = 112.5). The one sample t-test null hypothesis cannot be rejected, the sample mean does not deviate significantly from the theoretical mean. Hedges G does not detect any significant size effect.
+
 ```{r message=FALSE, warning=FALSE}
 #Exam 1
 gb %>% 
   filter(., assignment_name == "Exam1") %>% 
   gghistostats(data = .,
              x = score,
+             test.value = 105,
              normal.curve = TRUE,
              normal.curve.args = list(color = "red", size = 1),
              ggtheme = ggthemes::theme_tufte(),
@@ -192,19 +221,30 @@ gb %>%
              )
 ```
 
+
+The Shapiro-Wilk test provides a quick check to see if scores are normally distributed. Exam 1 scores are normally distributed.
+
 ```{r message=FALSE, warning=FALSE}
 gb %>% 
   filter(assignment_name=="Exam1") %>% 
-  shapiro_test(score)
+  shapiro_test(score)%>% 
+  mutate(statistic=round(statistic,3)) %>% 
+  mutate(p=round(p,3))
 ```
+
+A quantile-quantile (QQ) plot provides a graphical means to asses whether the distribution is normal. The plot identifies a single individual who is outside of the 95% confidence interval, indicating there is a single outlier.
 
 ```{r message=FALSE, warning=FALSE}
 gb %>% 
   filter(assignment_name=="Exam1") %>% 
   ggplot(.,aes(sample = score))+
-  stat_qq()+
-  stat_qq_line()
+  stat_qq_band() +
+  stat_qq_line() +
+  stat_qq_point() +
+  labs(x = "Theoretical Quantiles", y = "Sample Quantiles")
 ```
+
+The `rstatix` identify `identify_outliers()` function, like the qqplot above, indicates a single outlier. The `identify_outliers()` function indicates that the outlier is not extreme.
 
 ```{r message=FALSE, warning=FALSE}
 gb %>% 
@@ -214,12 +254,15 @@ gb %>%
 
 ## Exam 2
 
+A histogram of Exam 2 shows a negative skew which is consistent with what was reported above in the summary statistics. The same test value of 112 was used. The null hypothesis of the one sample T-test cannot be rejected, the sample mean does not deviate significantly from the theoretical mean. Hedges G does not flag any significant size effect.
+
 ```{r message=FALSE, warning=FALSE}
 # Exam 2
 gb %>% 
   filter(., assignment_name == "Exam2") %>% 
   gghistostats(data = .,
              x = score,
+             test.value = 112,
              normal.curve = TRUE,
              normal.curve.args = list(color = "red", size = 1),
              ggtheme = ggthemes::theme_tufte(),
@@ -227,19 +270,29 @@ gb %>%
              )
 ```
 
+The distribution does not pass the Shapiro-Wilk normality test which is consistent with visual inspection of the histogram above. 
+
 ```{r message=FALSE, warning=FALSE}
 gb %>% 
   filter(assignment_name=="Exam2") %>% 
-  shapiro_test(score)
+  shapiro_test(score)%>% 
+  mutate(statistic=round(statistic,3)) %>% 
+  mutate(p=round(p,3))
 ```
+
+A QQ Plot shows the presence of three outliers that are outside the 95% confidence interval.
 
 ```{r message=FALSE, warning=FALSE}
 gb %>% 
   filter(assignment_name=="Exam2") %>% 
   ggplot(.,aes(sample = score))+
-  stat_qq()+
-  stat_qq_line()
+  stat_qq_band() +
+  stat_qq_line() +
+  stat_qq_point() +
+  labs(x = "Theoretical Quantiles", y = "Sample Quantiles")
 ```
+
+The `identify_outliers()` function confirms visual interpretation of the QQ Plot and identifies the outliers as extreme.
 
 ```{r message=FALSE, warning=FALSE}
 gb %>% 
@@ -249,12 +302,16 @@ gb %>%
 
 ## Exam 3
 
+
+The null hypothesis cannot be rejected, the sample mean does not deviate significantly from the theoretical mean.
+
 ```{r message=FALSE, warning=FALSE}
 # Exam 3
 gb %>% 
   filter(., assignment_name == "Exam3") %>% 
   gghistostats(data = .,
              x = score,
+             test.value = 105,
              normal.curve = TRUE,
              normal.curve.args = list(color = "red", size = 1),
              ggtheme = ggthemes::theme_tufte(),
@@ -265,15 +322,19 @@ gb %>%
 ```{r message=FALSE, warning=FALSE}
 gb %>% 
   filter(assignment_name=="Exam3") %>% 
-  shapiro_test(score)
+  shapiro_test(score)%>% 
+  mutate(statistic=round(statistic,3)) %>% 
+  mutate(p=round(p,3))
 ```
 
 ```{r message=FALSE, warning=FALSE}
 gb %>% 
   filter(assignment_name=="Exam3") %>% 
   ggplot(.,aes(sample = score))+
-  stat_qq()+
-  stat_qq_line()
+  stat_qq_band() +
+  stat_qq_line() +
+  stat_qq_point() +
+  labs(x = "Theoretical Quantiles", y = "Sample Quantiles")
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -284,11 +345,14 @@ gb %>%
 
 ## Attendance
 
+The histogram of attendance is consistent with the summary statistics which suggested a negative skewed distribution. The test value for the one sample t-test was 75 (100 points possible * 0.75 = 75). The null hypothesis cannot be rejected, the sample mean does not deviate significantly from the theoretical mean. Hedges G does not identify any significant size effects.
+
 ```{r message=FALSE, warning=FALSE}
 # Attendance
 gb_wide %>% 
   gghistostats(data = .,
              x = attendance,
+             test.value = 75,
              normal.curve = TRUE,
              normal.curve.args = list(color = "red", size = 1),
              ggtheme = ggthemes::theme_tufte(),
@@ -297,17 +361,28 @@ gb_wide %>%
 
 ```
 
+
+Shapiro-Wilk null hypothesis is rejected, Attendance scores are significantly different than a normal distribution.
+
 ```{r message=FALSE, warning=FALSE}
 gb_wide %>% 
-  shapiro_test(attendance)
+  shapiro_test(attendance)%>% 
+  mutate(statistic=round(statistic,3)) %>% 
+  mutate(p=round(p,3))
 ```
+
+Visual inspection of a QQ Plot indicates the presence of four outliers. Three are on the left side of the distribution and one to the right.
 
 ```{r message=FALSE, warning=FALSE}
 gb_wide %>% 
   ggplot(.,aes(sample = attendance))+
-  stat_qq()+
-  stat_qq_line()
+  stat_qq_band() +
+  stat_qq_line() +
+  stat_qq_point() +
+  labs(x = "Theoretical Quantiles", y = "Sample Quantiles")
 ```
+
+The `identify_outliers()` function only flaggs three outliers which are those to the left of the QQ Plot. Only one of the three outliers is identified as extreme.
 
 ```{r message=FALSE, warning=FALSE}
 gb_wide %>% 
@@ -315,11 +390,11 @@ gb_wide %>%
   identify_outliers(attendance)
 ```
 
-Exam 1 has a single outlier while Exams 2 and 3 had three outliers each. Notably, two individuals show up as outliers on both Exams 2 and 3. These might be useful to consider in terms of attendance later on.
+Exam 1 has a single outlier while Exams 2 and 3 had three outliers each as did attendance. Notably, two of the same individuals show up as outliers on both Exams 2 and 3. These might be useful to consider in terms of attendance later on. The one extreme outlier in attendance is also an outlier on Exam 3.
 
 ## Compare Exam Scores
 
-The `ggstatsplot` library also provides a function `ggwithinstats()` to compare distributions and central tendencies of the three exams. This shows that there are no signficant differences in the means of the three exams.
+The `ggstatsplot` library also provides a function `ggwithinstats()` to compare distributions and central tendencies of the three exams. The null hypothesis of Fishers F is not rejected indicating that there is no significant differences in the means of the three exams.
 
 ```{r}
 gb %>% 
@@ -329,6 +404,48 @@ gb %>%
                x = assignment_name,
                y = score
                )
+```
+
+## Grand Total
+
+```{r message=FALSE, warning=FALSE}
+# Grand Total
+gb_wide %>% 
+  gghistostats(data = .,
+             x = grand_total,
+             test.value = 750,
+             normal.curve = TRUE,
+             normal.curve.args = list(color = "red", size = 1),
+             ggtheme = ggthemes::theme_tufte(),
+             title = "Cumulative Scores"
+             )
+
+```
+
+
+
+```{r message=FALSE, warning=FALSE}
+gb_wide %>% 
+  shapiro_test(grand_total)%>% 
+  mutate(statistic=round(statistic,3)) %>% 
+  mutate(p=round(p,3))
+```
+
+
+```{r message=FALSE, warning=FALSE}
+gb_wide %>% 
+  ggplot(.,aes(sample = grand_total))+
+  stat_qq_band() +
+  stat_qq_line() +
+  stat_qq_point() +
+  labs(x = "Theoretical Quantiles", y = "Sample Quantiles")
+```
+
+
+```{r message=FALSE, warning=FALSE}
+gb_wide %>% 
+  select(anon_id, grand_total) %>% 
+  identify_outliers(grand_total)
 ```
 
 # Regression
@@ -386,7 +503,24 @@ gb_wide %>%
   geom_smooth(method = "lm")
 ```
 
-The effect of Cumulative Attendance increased with each exam and was significant on the final.
+
+Cumulative Attendance explained a statistically significant and substantial proportion of the variance in Grand Total($R^2 = 0.47, p < .001, adj. R^2 = 0.46$). The effect of Cumulative Attendance is statistically significant and positive ($b = 5.91, t(41) = 6.05, p < .001$).
+
+
+```{r message=FALSE, warning=FALSE}
+lm(grand_total~attendance, data = gb_wide) %>% 
+  report()
+```
+
+```{r message=FALSE, warning=FALSE}
+gb_wide %>% 
+  ggplot(., aes(attendance, grand_total))+
+  geom_point()+
+  geom_smooth(method = "lm")
+```
+
+
+The effect of Cumulative Attendance increased with each exam and was significant on the final. Cumulative Attendance was significant and explained a substantial proportion of variance in Grand Total.
 
 ## Does Performance on One Exam Predict Performance on Another?
 
@@ -449,17 +583,15 @@ lm(Exam3~Exam1+Exam2, data = gb_wide) %>%
   report()
 ```
 
-# Other Analyses
+Exams 1-3 explain a statistically significant and substantial proportion of variance in the Grand Total ($R^2 = 0.82, p < .001, adj. R^2 = 0.81$). The effect of Exam 1 is statistically non-significant and positive ($b = 0.10, t(39) = 0.19, p = 0.851$). The effect of Exam 2 is statistically significant and positive ($b = 1.33, t(39) = 3.95, p < .001$). The effect of Exam 3 is statistically significant and positive ($b = 3.01, t(39) = 9.04, p < .001$).
 
-## T-tests
-
-One sample t-tests can be run to compare with a hypothetical mean.
-
-```{r}
-t_test(gb_wide, Exam1 ~ 1, mu=0)
-t_test(gb_wide, Exam2 ~ 1, mu=0)
+```{r message=FALSE, warning=FALSE}
+lm(grand_total~Exam1+Exam2+Exam3, data = gb_wide) %>% 
+  report()
 ```
 
+
+# References
 ```{r, include=FALSE}
 knitr::write_bib(file = 'packages.bib')
 ```

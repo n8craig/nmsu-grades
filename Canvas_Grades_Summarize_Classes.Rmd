@@ -11,8 +11,11 @@ output:
 bibliography: [references.bib, packages.bib]
 ---
 
-# Load Libraries
+# Introduction
+This document illustrates some Exploratory Data Analysis (EDA) [@tukey1977] of Canvas exam grades. The data are wrangled with `tidyverse` and `dplyr` [@R-tidyverse] functions, then plotted with `ggplot2` [@R-ggplot2] and `ggstatsplot` [@R-ggstatsplot].
 
+# Load Libraries
+We begin by loading the necessary libraries.
 ```{r message=FALSE, warning=FALSE}
 
 # Read CSV file
@@ -22,7 +25,14 @@ library(readr)
 library(tidyverse)
 library(kableExtra)
 library(knitr)
-opts_chunk$set(comment=NA, prompt=FALSE, cache=FALSE, echo=TRUE, results='asis')
+opts_chunk$set(comment=NA,
+               prompt=FALSE,
+               cache=FALSE,
+               echo=TRUE,
+               results='asis')
+
+# Stats
+library(summarytools)
 
 # Plotting
 library(ggplot2)
@@ -30,6 +40,8 @@ library(ggstatsplot)
 ```
 
 # Load Data and Wrangle
+Since we are working with multiple classes, in this case eight comparable instances, the files were[ pulled from canvas](https://n8craig.github.io/nmsu-grades/Canvas_Grades_Get_Grades_Multiple_Classes.html) and then saved to a csv file. Here that file is read from disk and wrangled into shape.
+
 ```{r}
 gb_list <- read_csv("data/gb_list.csv")
 
@@ -38,7 +50,7 @@ gb_list <- gb_list %>%
   mutate(course_name = as_factor(course_name))
 ```
 
-
+The base R `factor()` function is applied to order the classes chronologically. This ensures proper ordering in the graphs that follow.
 ```{r}
 # order the factors properly
 gb_list$course_name <- factor(gb_list$course_name,
@@ -57,12 +69,25 @@ gb_list$course_name <- factor(gb_list$course_name,
 # Exam 1
 
 ```{r}
-# gb_list %>% 
-#   filter(str_detect(assignment_name, "^Exam1|^EXAM1")) %>% 
-#   group_by(course_name) %>%
-#   select(assignment_name, score, course_name) %>% 
-#   descr()
+library(kableExtra)
 ```
+
+
+
+```{r}
+gb_list %>%
+  filter(str_detect(assignment_name, "^Exam1|^EXAM1")) %>%
+  group_by(course_name) %>%
+  select(assignment_name, score, course_name) %>%
+  descr(stats = c("mean", "sd", "min", "med", "max", "skewness", "kurtosis"),
+        transpose = TRUE,
+        headings = FALSE
+        ) %>% 
+  tb() %>% 
+  kable(format = "html", digits = 2) %>% 
+  kable_styling(bootstrap_options = "striped")
+```
+
 
 ```{r}
 gb_list %>% 
@@ -74,7 +99,6 @@ ggplot(., aes(x = score))+
     labs(
     title = "Exam 1 Histograms Across Classes"
   )
-  
 ```
 
 ```{r}
@@ -109,6 +133,20 @@ gb_list %>%
 ```
 
 # Exam 2
+
+```{r}
+gb_list %>%
+  filter(str_detect(assignment_name, "^Exam2|^EXAM2")) %>%
+  group_by(course_name) %>%
+  select(assignment_name, score, course_name) %>%
+  descr(stats = c("mean", "sd", "min", "med", "max", "skewness", "kurtosis"),
+        transpose = TRUE,
+        headings = FALSE) %>% 
+  tb() %>% 
+  kable(format = "html", digits = 2) %>% 
+  kable_styling(bootstrap_options = "striped")
+```
+
 
 ```{r}
 gb_list %>% 
@@ -154,6 +192,19 @@ gb_list %>%
 ```
 
 # Exam 3
+
+```{r}
+gb_list %>%
+  filter(str_detect(assignment_name, "^Exam3|^EXAM3")) %>%
+  group_by(course_name) %>%
+  select(assignment_name, score, course_name) %>%
+  descr(stats = c("mean", "sd", "min", "med", "max", "skewness", "kurtosis"),
+        transpose = TRUE,
+        headings = FALSE) %>% 
+  tb() %>% 
+  kable(format = "html", digits = 2) %>% 
+  kable_styling(bootstrap_options = "striped")
+```
 
 ```{r}
 gb_list %>% 

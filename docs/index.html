@@ -58,6 +58,28 @@ if (window.hljs) {
 
 
 
+<style type="text/css">
+/* for pandoc --citeproc since 2.11 */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
 
 
 
@@ -261,7 +283,7 @@ $(document).ready(function () {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="Canvas_Grades_Template.html">Course EDA Template</a>
+      <a href="Canvas_Grades_Template.html">Single Course EDA</a>
     </li>
     <li>
       <a href="Canvas_Grades_Get_Grades_Multiple_Classes.html">Get Grades Multiple Classes</a>
@@ -294,10 +316,30 @@ $(document).ready(function () {
 
 
 <p>This site shows some ways of interacting with Canvas Learning Management System (LMS) by means of R.</p>
-<p>The <code>exams</code> package is used to generate quiz zip files that can be imported into Canvas. This is much easier and faster than entering questions into Canvas’s GUI.</p>
-<p>The <code>rcanvas</code> library is used to connect to NMSU’s instance of Canvas. The primary task is retrieving grade books. From there, the data are wrangled with <code>dplyr</code>, summarized, and graphed with <code>ggplot2</code> and <code>ggstatsplot</code>.</p>
+<p>The <code>exams</code> <span class="citation">(Zeileis et al. 2020)</span> package is used to generate quiz zip files that can be imported into Canvas. This is much easier and faster than entering questions into Canvas’s GUI.</p>
+<p>The <code>rcanvas</code> <span class="citation">(Ranzolin, Hua, and Hathaway 2021)</span> library is used to connect to NMSU’s instance of Canvas. The primary task is retrieving grade books. From there, the data are wrangled with <code>dplyr</code> <span class="citation">(Wickham et al. 2021)</span>, summarized, and graphed with <code>ggplot2</code> <span class="citation">(Wickham et al. 2020)</span> and <code>ggstatsplot</code> <span class="citation">(Patil 2021)</span>.</p>
 <p>The original R Markdown files containing the code can be accessed at the corresponding GitHub <a href="https://github.com/n8craig/nmsu-grades">repository</a>.</p>
 <p><img src="index_files/figure-html/across-course-grades-1.png" width="672" /></p>
+<div id="references" class="section level1 unnumbered">
+<h1 class="unnumbered">References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-R-ggstatsplot" class="csl-entry">
+Patil, Indrajeet. 2021. <em>Ggstatsplot: Ggplot2 Based Plots with Statistical Details</em>. <a href="https://CRAN.R-project.org/package=ggstatsplot">https://CRAN.R-project.org/package=ggstatsplot</a>.
+</div>
+<div id="ref-R-rcanvas" class="csl-entry">
+Ranzolin, David, Chris Hua, and J. Hathaway. 2021. <em>Rcanvas: R Client for Canvas API</em>. <a href="https://github.com/daranzolin/rcanvas">https://github.com/daranzolin/rcanvas</a>.
+</div>
+<div id="ref-R-ggplot2" class="csl-entry">
+Wickham, Hadley, Winston Chang, Lionel Henry, Thomas Lin Pedersen, Kohske Takahashi, Claus Wilke, Kara Woo, Hiroaki Yutani, and Dewey Dunnington. 2020. <em>Ggplot2: Create Elegant Data Visualisations Using the Grammar of Graphics</em>. <a href="https://CRAN.R-project.org/package=ggplot2">https://CRAN.R-project.org/package=ggplot2</a>.
+</div>
+<div id="ref-R-dplyr" class="csl-entry">
+Wickham, Hadley, Romain François, Lionel Henry, and Kirill Müller. 2021. <em>Dplyr: A Grammar of Data Manipulation</em>. <a href="https://CRAN.R-project.org/package=dplyr">https://CRAN.R-project.org/package=dplyr</a>.
+</div>
+<div id="ref-R-exams" class="csl-entry">
+Zeileis, Achim, Bettina Gruen, Friedrich Leisch, and Nikolaus Umlauf. 2020. <em>Exams: Automatic Generation of Exams in r</em>. <a href="http://www.R-exams.org/">http://www.R-exams.org/</a>.
+</div>
+</div>
+</div>
 
 
 

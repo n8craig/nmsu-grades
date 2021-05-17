@@ -273,7 +273,7 @@ $(document).ready(function () {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="Canvas_Grades_Template.html">Course EDA Template</a>
+      <a href="Canvas_Grades_Template.html">Single Course EDA</a>
     </li>
     <li>
       <a href="Canvas_Grades_Get_Grades_Multiple_Classes.html">Get Grades Multiple Classes</a>
@@ -323,8 +323,8 @@ $(document).ready(function () {
 <div id="introduction" class="section level1" number="1">
 <h1 number="1"><span class="header-section-number">1</span> Introduction</h1>
 <p>This document describes the process for using the <code>R/Exams</code> package for creating an exam composed of simple single choice questions, the creation of an export file, and its uploading for import into Canvas. The flow chart below gives a graphical overview of the process.</p>
-<div id="htmlwidget-c07c5fbddde17eafb815" style="width:672px;height:480px;" class="DiagrammeR html-widget"></div>
-<script type="application/json" data-for="htmlwidget-c07c5fbddde17eafb815">{"x":{"diagram":"\ngraph TB\n  A[Exam-Creation.Rmd]---B[question-template.Rmd]\n  B-->C[question001.Rmd]\n  B-->D[question002.Rmd]\n  B-->E[question003.Rmd]\n  C-->F[Exam Vector]\n  D-->F\n  E-->F\n  F-->G[HTML Version]\n  F-->H[Doc Version]\n  F-->I[Answer Key]\n  F-->J[QTI Zip]\n  J-->K[Upload QTI Zip File to Canvas]\n"},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-22f1571af3924472ec08" style="width:672px;height:480px;" class="DiagrammeR html-widget"></div>
+<script type="application/json" data-for="htmlwidget-22f1571af3924472ec08">{"x":{"diagram":"\ngraph TB\n  A[Exam-Creation.Rmd]---B[question-template.Rmd]\n  B-->C[question001.Rmd]\n  B-->D[question002.Rmd]\n  B-->E[question003.Rmd]\n  C-->F[Exam Vector]\n  D-->F\n  E-->F\n  F-->G[HTML Version]\n  F-->H[Doc Version]\n  F-->I[Answer Key]\n  F-->J[QTI Zip]\n  J-->K[Upload QTI Zip File to Canvas]\n"},"evals":[],"jsHooks":[]}</script>
 <div id="install-library-and-dependencies" class="section level2" number="1.1">
 <h2 number="1.1"><span class="header-section-number">1.1</span> Install Library and Dependencies</h2>
 <p>It is assumed that <a href="https://www.rstudio.com/">RStudio</a> is already installed, if not please install it. With RStudio running do the following:</p>

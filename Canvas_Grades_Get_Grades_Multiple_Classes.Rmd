@@ -11,7 +11,7 @@ output:
 bibliography: [references.bib, packages.bib]
 ---
 
-The following blocks of code demonstrate one method for extracting gradebooks from multiple classes and binding them into a single data frame. Since the process of downloading multiple data frames from Canvas can take a while, more than 15 minutes with eight classes, this retrieval portion of the process is separated from the exploratory portion of the process which is detailed in a separate file.
+The following blocks of code demonstrate one method for extracting grade books from multiple classes and binding them into a single data frame. The `rcanvas` package [@R-rcanvas] is used to connect to Canvas and retrieve the grade books from multiple comparable classes. Since the process of downloading multiple data frames from Canvas can take a while, more than 15 minutes with eight classes, this retrieval portion of the process is separated from the exploratory portion of the process which is detailed in a separate file.
 
 # Load Libraries
 
@@ -35,6 +35,9 @@ library(ggstatsplot)
 ```
 
 # Establish Connection to Canvas
+To connect to Canvas, one must establish a Canvas token. Instructions for doing this can be found at the `rcanvas` package [repository](https://github.com/daranzolin/rcanvas).
+
+To avoid writing credentials into the script, the `keyring` [@R-keyring] library is used. The credential entry for Canvas was created in a separate step. Instructions for making `keyring` entries can be found at the R-bloggers [website.](https://www.r-bloggers.com/2019/06/how-to-hide-a-password-in-r-with-the-keyring-package/).
 
 ```{r}
 # Enter token, set domain, and get class list
@@ -52,13 +55,15 @@ course_list
 
 ## Get all of one type of class
 
+Use a `grepl` statement to filter the course list down to a subset of comparable classes.
+
 ```{r}
 course_list <- course_list %>% 
   filter(.,grepl("ANTH-125G|HON-235G|ANTH-1140G|HNRS-2161G", name))
 course_list
 ```
 
-I am sure there is a programmatic way to do this (by means of a for loop, lapply, or map function in purrr) but I fiddled around and couldn't figure it out. Therefore, in this case it is hard coded. Note the following step takes more than 15 minutes.
+With the subset list of classes, use the `rcanvas` function `get_course_gradebook()` to retrieve the grade book for each relevant class. In the example below, this is hard coded. It is not the optimal work flow. I am sure there is a programmatic way to do this (by means of a for loop, lapply, or map function in purrr). However, I fiddled around and couldn't figure it out. If someone knows a better method, please open an issue in the repository and I will incorporate any working suggestions. Lacking the knowledge of how to do this programmatically, in this case the workaround solution is hard coding. Note the following step takes more than 15 minutes.
 
 ```{r echo=T, eval = F, message=FALSE, warning=FALSE, results='hide'}
 # Loading the grade book is pretty slow.
@@ -74,6 +79,8 @@ gb_all_1345426 <- get_course_gradebook(1345426)
 
 
 ```
+
+Once each of the grade books is retrieved and assigned to a variable, use the `dplyr` function to add a new column with the appropriate course name. Again, it is no doubt possible to perform this task with a function. If anyone has an idea about how to do this better please open an issue in the repository with a suggestion, I will hapily incorporate it, and provide attribution.
 
 ```{r echo=T, eval = F,}
 # Add a course name column to each data frame
@@ -102,6 +109,8 @@ gb_all_1345426 <- gb_all_1345426 %>%
   mutate(course_name = "HNRS-2161G S21")
 ```
 
+With all of the grade books downloaded, the `course_name` column added, now it is converted into a list.
+
 ```{r echo=T, eval = F,}
 # Bind the data frames into a list.
 gb_list <- list(gb_all_1244932,
@@ -116,7 +125,11 @@ gb_list <- list(gb_all_1244932,
 gb_list
 ```
 
-Create a function and apply it to the list of data frames.
+A function is created to do several data wrangling tasks including: 
+- create an anonymous student ID (`anon_id`) based on two existing columns
+- subsetting the columns
+- removing the "test student" which has no `anon_id`
+- converting `assignment_name`, `course_id`, and `course_name` to factors
 
 ```{r echo=T, eval = F,}
 # Apply a function that cleans the raw data.
@@ -141,11 +154,15 @@ prepR <- function(x){
 }
 ```
 
+Use the `purrr` package that is part of the `tidyverse` to `map()` the previously defined function to the list of dataframes.
+
 ```{r echo=T, eval = F,}
 # Apply the function to the list of grade books.
 gb_list <- map(gb_list, ~prepR(.))
 gb_list
 ```
+
+Use the `bind_rows()` function to convert the list of dataframes into one single long form dataframe.
 
 ```{r echo=T, eval = F,}
 # Bind each of the grade books in the list into a single dataframe
@@ -153,10 +170,14 @@ gb_list <- gb_list %>%
   bind_rows()
 ```
 
+Review the dataframe to make sure everything is ok.
+
 ```{r echo=T, eval = F,}
 # Spot check the data frame
 gb_list
 ```
+
+Given that the data retrieval process takes a long time, save the resulting wrangled dataframe to a csv file.
 
 ```{r echo=T, eval = F,}
 # Save the dataframe to a csv file.
@@ -165,3 +186,9 @@ write.csv(gb_list, "../data/gb_list.csv")
 
 
 From here with the file saved, one can move on to exploration and analysis. This is performed in another notebook.
+
+```{r, include=FALSE}
+knitr::write_bib(file = 'packages.bib')
+```
+
+# References

@@ -1,13 +1,16 @@
 ---
 title: "Home"
-output: html_document
+output:
+  html_document:
+    link-citations: yes
+bibliography: [references.bib, packages.bib]
 ---
 
 This site shows some ways of interacting with Canvas Learning Management System (LMS) by means of R. 
 
-The `exams` package is used to generate quiz zip files that can be imported into Canvas. This is much easier and faster than entering questions into Canvas's GUI.
+The `exams` [@R-exams] package is used to generate quiz zip files that can be imported into Canvas. This is much easier and faster than entering questions into Canvas's GUI.
 
-The `rcanvas` library is used to connect to NMSU's instance of Canvas. The primary task is retrieving grade books. From there, the data are wrangled with `dplyr`, summarized, and graphed with `ggplot2` and `ggstatsplot`.
+The `rcanvas` [@R-rcanvas] library is used to connect to NMSU's instance of Canvas. The primary task is retrieving grade books. From there, the data are wrangled with `dplyr` [@R-dplyr], summarized, and graphed with `ggplot2` [@R-ggplot2] and `ggstatsplot` [@R-ggstatsplot].
 
 The original R Markdown files containing the code can be accessed at the corresponding GitHub  [repository](https://github.com/n8craig/nmsu-grades).
 
@@ -62,3 +65,8 @@ gb_list %>%
   )
 ```
 
+```{r, include=FALSE}
+knitr::write_bib(file = 'packages.bib')
+```
+
+# References
