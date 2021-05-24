@@ -70,6 +70,28 @@ if (window.hljs) {
 
 
 
+<style type="text/css">
+/* for pandoc --citeproc since 2.11 */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
 
 
 
@@ -311,22 +333,29 @@ $(document).ready(function () {
 <li><a href="#introduction"><span class="toc-section-number">1</span> Introduction</a>
 <ul>
 <li><a href="#install-library-and-dependencies"><span class="toc-section-number">1.1</span> Install Library and Dependencies</a></li>
-<li><a href="#question-format"><span class="toc-section-number">1.2</span> Question Format</a></li>
+<li><a href="#basic-question-format"><span class="toc-section-number">1.2</span> Basic Question Format</a></li>
+<li><a href="#questions-with-figures"><span class="toc-section-number">1.3</span> Questions with Figures</a></li>
 </ul></li>
-<li><a href="#creating-questions"><span class="toc-section-number">2</span> Creating Questions</a></li>
+<li><a href="#writing-and-creating-questions"><span class="toc-section-number">2</span> Writing and Creating Questions</a></li>
 <li><a href="#build-an-exam-and-check-it"><span class="toc-section-number">3</span> Build an Exam and Check It</a></li>
 <li><a href="#editing-questions"><span class="toc-section-number">4</span> Editing questions</a></li>
 <li><a href="#create-an-export-file-to-send-to-canvas"><span class="toc-section-number">5</span> Create an Export File to Send to Canvas</a></li>
+<li><a href="#references">References</a></li>
 </ul>
 </div>
 
 <div id="introduction" class="section level1" number="1">
-<h1 number="1"><span class="header-section-number">1</span> Introduction</h1>
-<p>This document describes the process for using the <code>R/Exams</code> package for creating an exam composed of simple single choice questions, the creation of an export file, and its uploading for import into Canvas. The flow chart below gives a graphical overview of the process.</p>
-<div id="htmlwidget-22f1571af3924472ec08" style="width:672px;height:480px;" class="DiagrammeR html-widget"></div>
-<script type="application/json" data-for="htmlwidget-22f1571af3924472ec08">{"x":{"diagram":"\ngraph TB\n  A[Exam-Creation.Rmd]---B[question-template.Rmd]\n  B-->C[question001.Rmd]\n  B-->D[question002.Rmd]\n  B-->E[question003.Rmd]\n  C-->F[Exam Vector]\n  D-->F\n  E-->F\n  F-->G[HTML Version]\n  F-->H[Doc Version]\n  F-->I[Answer Key]\n  F-->J[QTI Zip]\n  J-->K[Upload QTI Zip File to Canvas]\n"},"evals":[],"jsHooks":[]}</script>
+<h1><span class="header-section-number">1</span> Introduction</h1>
+<p>This document describes the process for using the <code>exams</code> <span class="citation">(Zeileis et al. 2020)</span> package for creating an exam composed of simple single choice questions, the creation of an export file, and its uploading for import into Canvas. The flow chart below gives a graphical overview of the process.</p>
+<div class="figure"><span id="fig:unnamed-chunk-2"></span>
+<div id="htmlwidget-5ca2a34e02a8c582b5fc" style="width:672px;height:480px;" class="DiagrammeR html-widget"></div>
+<script type="application/json" data-for="htmlwidget-5ca2a34e02a8c582b5fc">{"x":{"diagram":"\ngraph TB\n  A[Exam-Creation.Rmd]---B[question-template.Rmd]\n  B-->C[question001.Rmd]\n  B-->D[question002.Rmd]\n  B-->E[question003.Rmd]\n  C-->F[Exam Vector]\n  D-->F\n  E-->F\n  F-->G[HTML Version]\n  F-->H[Doc Version]\n  F-->I[Answer Key]\n  F-->J[QTI Zip]\n  J-->K[Upload QTI Zip File to Canvas]\n"},"evals":[],"jsHooks":[]}</script>
+<p class="caption">
+Figure 1.1: Flow chart illustrating the process of using the <code>exams</code> package to create and exam and then to upload it to Canvas.
+</p>
+</div>
 <div id="install-library-and-dependencies" class="section level2" number="1.1">
-<h2 number="1.1"><span class="header-section-number">1.1</span> Install Library and Dependencies</h2>
+<h2><span class="header-section-number">1.1</span> Install Library and Dependencies</h2>
 <p>It is assumed that <a href="https://www.rstudio.com/">RStudio</a> is already installed, if not please install it. With RStudio running do the following:</p>
 <ol style="list-style-type: decimal">
 <li>In the library where the exam or exams are to be built for a given class, create a new RStudio project.</li>
@@ -337,12 +366,12 @@ $(document).ready(function () {
 library(exams)</code></pre>
 <p>It is important to note that <a href="https://pandoc.org/">pandoc</a> needs to be installed on the system. Unless there is a need to generate pdf output, everything should be ready to start building questions for an exam. See the R/Exams <a href="http://www.r-exams.org/tutorials/installation/">instillation tutorial</a> for additional guidance in instillation issues.</p>
 </div>
-<div id="question-format" class="section level2" number="1.2">
-<h2 number="1.2"><span class="header-section-number">1.2</span> Question Format</h2>
+<div id="basic-question-format" class="section level2" number="1.2">
+<h2><span class="header-section-number">1.2</span> Basic Question Format</h2>
 <p>While a single file is used to load the library and generate the exam, each individual exam question is written to its own separate R Markdown <code>.Rmd</code> file. These files are later combined together to build the exam. It is important that each exam question file is properly written. To facilitate consistency in file structure, and to save time it is recommended to use a template file. The following template is for single choice questions. Other templates are available in the R/Exams <a href="http://www.r-exams.org/tutorials/first_steps/">First Steps</a> tutorial.</p>
-<pre><code>Question
+<pre class="markdown"><code>Question
 ========
-Which answer is correct
+Which answer is correct?
 
 Answerlist
 ----------
@@ -361,14 +390,42 @@ exsolution: 0010</code></pre>
 <li><code>exname</code> is the question name.</li>
 <li><code>extype</code> is the question type. For simple single choice questions, <code>schoice</code> is the option to select.</li>
 <li><code>exsolution</code> is the answer key. Each answer must be marked as correct <code>1</code> or incorrect <code>0</code>. In the sample file above, Answer 3 is the correct answer.</li>
+<li>Do not remove the lines <code>Question</code>, <code>Answerlist</code>, or <code>Meta-information</code>.</li>
+<li>Do not remove the the <code>====</code> or the <code>---</code>.</li>
 <li>Make sure that there is no blank line between the <code>====</code> or the <code>---</code> and the text of the question, or answer list.</li>
 <li>There should be only a single blank line after the question stem and after the answer list.</li>
 <li>Spaces at the end of an answer can cause problems when building a test. If there are trailing white spaces, the questions will not compile properly into an exam. Going back and finding these issues can be time consuming and frustrating. Preventing them in the first place helps tremendously. <strong>Probably the best way to prevent and find unwanted white spaces or carriage returns is by enabling white space display in RStudio</strong>. Enable white space display by going to: Tools &gt; Global Options &gt; Code &gt; Display &gt; tick the selection box to enable “Show white space characters” &gt; and click “OK.”</li>
 </ul>
 </div>
+<div id="questions-with-figures" class="section level2" number="1.3">
+<h2><span class="header-section-number">1.3</span> Questions with Figures</h2>
+<p>It is possible to have questions with figures. To do this, the <code>questionXXX.Rmd</code> file must have a code chunk in addition to just the markdown text. The figure graphic can be located anywhere on the system, but the code chunk to <code>include_supplement()</code> must provide the correct path to the file.</p>
+<pre class="markdown"><code>```{r, echo = FALSE, results = &quot;hide&quot;}
+include_supplement(&quot;map2.jpg&quot;, dir = &quot;&quot;, recursive = TRUE)
+```
+
+Question
+========
+What is location #3 on the map?
+
+&lt;map2.jpg&gt;
+
+Answerlist
+----------
+* Answer 1
+* Answer 2
+* Answer 3
+* Answer 4
+
+Meta-information
+================
+exname: question75
+extype: schoice
+exsolution: 0010</code></pre>
 </div>
-<div id="creating-questions" class="section level1" number="2">
-<h1 number="2"><span class="header-section-number">2</span> Creating Questions</h1>
+</div>
+<div id="writing-and-creating-questions" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Writing and Creating Questions</h1>
 <p>In the main R Markdown file, the one we’re calling <code>Exam-Creation.Rmd</code> create a new chunk and add the following code which can be used to copy the template file to create a new file in the same working directory, and open it for editing:</p>
 <pre class="r"><code>    file.copy(&quot;question-template.Rmd&quot;, &quot;question001.Rmd&quot;)
     file.edit(&quot;question001.Rmd&quot;)</code></pre>
@@ -376,7 +433,7 @@ exsolution: 0010</code></pre>
 <p>As described below, it is possible to have Canvas randomize the order of answers when presenting the questions on a quiz. If randomizing the answer is desirable, avoid writing questions that rely on answers such as “all of the above” or “none of the above.” Instead, use wording like “all of the answers” or “none of the answers.”</p>
 </div>
 <div id="build-an-exam-and-check-it" class="section level1" number="3">
-<h1 number="3"><span class="header-section-number">3</span> Build an Exam and Check It</h1>
+<h1><span class="header-section-number">3</span> Build an Exam and Check It</h1>
 <ol style="list-style-type: decimal">
 <li>Create a new code chunk using the example below.</li>
 <li>The code creates a variable <code>e</code> that contains a vector consisting of all the R Markdown files to be included in the exam. Method 1 (commented out) illustrates how to build the vector literally. Method 2 (preferable) shows how to use pattern matching to combine all Rmd files in the directory with the name <code>question</code>.</li>
@@ -401,7 +458,7 @@ exsolution: 0010</code></pre>
     exams_metainfo(exams2pandoc(e))</code></pre>
 </div>
 <div id="editing-questions" class="section level1" number="4">
-<h1 number="4"><span class="header-section-number">4</span> Editing questions</h1>
+<h1><span class="header-section-number">4</span> Editing questions</h1>
 <ul>
 <li>If either <code>exams2html()</code> or <code>exams2pandoc()</code> do not run properly, provided pandoc is installed properly, the issue may be due to unwanted white spaces in the question (see above).</li>
 <li>When proof reading either an html or doc version of the exam and errors or corrections are found in a question or questions, it is possible to search through all of the *.Rmd files in the current working directory using the <code>Edit</code> menu &gt;<code>Find in Files</code> option. Paste in the string or search term to identify which of the question files needs to be edited. RStudio will show which of the <code>questionXXX.Rmd</code> files needs to be edited.</li>
@@ -409,7 +466,7 @@ exsolution: 0010</code></pre>
 </ul>
 </div>
 <div id="create-an-export-file-to-send-to-canvas" class="section level1" number="5">
-<h1 number="5"><span class="header-section-number">5</span> Create an Export File to Send to Canvas</h1>
+<h1><span class="header-section-number">5</span> Create an Export File to Send to Canvas</h1>
 <p>To create an export file, apply the function <code>exams2canvas()</code>. This will generate a zipped QTI file which can be uploaded. At this stage, be sure to properly set how many points each question is worth. However, I think this can be adjusted in a Canvas question bank.</p>
 <pre class="r"><code>    # Export the exam to a zip file for Canvas
     exams2canvas(e, name = &quot;tempquiz&quot;, points = 3)</code></pre>
@@ -420,6 +477,14 @@ exsolution: 0010</code></pre>
 <li>Link that question group to a question bank, set the correct number of questions and point value.</li>
 <li>It is possible to randomize the order of both the questions and the answers. If the plan is to randomize the answers.</li>
 </ul>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-R-exams" class="csl-entry">
+Zeileis, Achim, Bettina Gruen, Friedrich Leisch, and Nikolaus Umlauf. 2020. <em>Exams: Automatic Generation of Exams in r</em>. <a href="http://www.R-exams.org/">http://www.R-exams.org/</a>.
+</div>
+</div>
 </div>
 
 

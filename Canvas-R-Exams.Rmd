@@ -3,7 +3,7 @@ title: "Making Simple Multiple Choice Exams with R-Exams and Importing to Canvas
 author: "Nathan Craig"
 date: "9 August 2020"
 output:
-  html_document:
+  bookdown::html_document2:
     toc: yes
     number_sections: yes
     link-citations: yes
@@ -18,9 +18,9 @@ library(exams)
 
 # Introduction
 
-This document describes the process for using the `R/Exams` package for creating an exam composed of simple single choice questions, the creation of an export file, and its uploading for import into Canvas. The flow chart below gives a graphical overview of the process.
+This document describes the process for using the `exams` [@R-exams] package for creating an exam composed of simple single choice questions, the creation of an export file, and its uploading for import into Canvas. The flow chart below gives a graphical overview of the process.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.cap="Flow chart illustrating the process of using the `exams` package to create and exam and then to upload it to Canvas."}
 mermaid("
 graph TB
   A[Exam-Creation.Rmd]---B[question-template.Rmd]
@@ -53,37 +53,70 @@ library(exams)
 
 It is important to note that [pandoc](https://pandoc.org/) needs to be installed on the system. Unless there is a need to generate pdf output, everything should be ready to start building questions for an exam. See the R/Exams [instillation tutorial](http://www.r-exams.org/tutorials/installation/) for additional guidance in instillation issues.
 
-## Question Format
+## Basic Question Format
 
 While a single file is used to load the library and generate the exam, each individual exam question is written to its own separate R Markdown `.Rmd` file. These files are later combined together to build the exam. It is important that each exam question file is properly written. To facilitate consistency in file structure, and to save time it is recommended to use a template file. The following template is for single choice questions. Other templates are available in the R/Exams [First Steps](http://www.r-exams.org/tutorials/first_steps/) tutorial.
 
-    Question
-    ========
-    Which answer is correct
+``` {.markdown}
+Question
+========
+Which answer is correct?
 
-    Answerlist
-    ----------
-    * Answer 1
-    * Answer 2
-    * Answer 3
-    * Answer 4
+Answerlist
+----------
+* Answer 1
+* Answer 2
+* Answer 3
+* Answer 4
 
-    Meta-information
-    ================
-    exname: question2
-    extype: schoice
-    exsolution: 0010
+Meta-information
+================
+exname: question2
+extype: schoice
+exsolution: 0010
+```
 
 A few pieces of `Meta-information` and general issues to consider are worth mentioning when writing and editing questions:
 
 -   `exname` is the question name.
 -   `extype` is the question type. For simple single choice questions, `schoice` is the option to select.
 -   `exsolution` is the answer key. Each answer must be marked as correct `1` or incorrect `0`. In the sample file above, Answer 3 is the correct answer.
+-   Do not remove the lines `Question`, `Answerlist`, or `Meta-information`.
+-   Do not remove the the `====` or the `---`.
 -   Make sure that there is no blank line between the `====` or the `---` and the text of the question, or answer list.
 -   There should be only a single blank line after the question stem and after the answer list.
 -   Spaces at the end of an answer can cause problems when building a test. If there are trailing white spaces, the questions will not compile properly into an exam. Going back and finding these issues can be time consuming and frustrating. Preventing them in the first place helps tremendously. **Probably the best way to prevent and find unwanted white spaces or carriage returns is by enabling white space display in RStudio**. Enable white space display by going to: Tools \> Global Options \> Code \> Display \> tick the selection box to enable "Show white space characters" \> and click "OK".
 
-# Creating Questions
+## Questions with Figures
+
+It is possible to have questions with figures. To do this, the `questionXXX.Rmd` file must have a code chunk in addition to just the markdown text. The figure graphic can be located anywhere on the system, but the code chunk to `include_supplement()` must provide the correct path to the file.
+
+```` {.markdown}
+`r ''````{r, echo = FALSE, results = "hide"}
+include_supplement("map2.jpg", dir = "", recursive = TRUE)
+```
+
+Question
+========
+What is location #3 on the map?
+
+<map2.jpg>
+
+Answerlist
+----------
+* Answer 1
+* Answer 2
+* Answer 3
+* Answer 4
+
+Meta-information
+================
+exname: question75
+extype: schoice
+exsolution: 0010
+````
+
+# Writing and Creating Questions
 
 In the main R Markdown file, the one we're calling `Exam-Creation.Rmd` create a new chunk and add the following code which can be used to copy the template file to create a new file in the same working directory, and open it for editing:
 
@@ -143,3 +176,9 @@ When importing into canvas:
 -   In Canvas, create a new quiz and from the quiz create a new question group.
 -   Link that question group to a question bank, set the correct number of questions and point value.
 -   It is possible to randomize the order of both the questions and the answers. If the plan is to randomize the answers.
+
+# References
+
+```{r include=FALSE}
+knitr::write_bib(file = 'packages.bib')
+```
