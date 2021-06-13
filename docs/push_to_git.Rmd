@@ -5,25 +5,48 @@ date: "6/11/2021"
 output: html_document
 ---
 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Library `gert`
+
+```{r}
+library(gert)
+```
+
+
+```{r}
+# This does not need to be done every time
+credentials::set_github_pat()
+```
+
+
+```{r}
+writeLines("Hello world!", 
+           file.path("C:\\Users\\nmc\\OneDrive - New Mexico State University\\R-projects\\nmsu-grades\\docs",
+                     "example.txt"))
+git_add("docs/example.txt")
+git_commit(paste("Commit on",Sys.time()))
+git_push()
+```
+
+# Library: `git2r`
 
 ```{r}
 library(git2r)
 ```
 
 ```{r}
-creds <- cred_user_pass("n8craig@gmail.com","zettelkasten-monster-writing")
+# This method is no longer accepted
+creds <- cred_user_pass("username","password")
 ```
 
 
 ```{r}
 repo <- init(path = "C:\\Users\\nmc\\OneDrive - New Mexico State University\\R-projects\\nmsu-grades")
 ```
-
-
 
 ```{r}
 config(repo, user.name = "n8craig", user.email = "n8craig@gmail.com")
@@ -41,33 +64,5 @@ repository_head(repo)
 
 ```{r}
 push(object = "example.txt", credentials = creds)
-```
-
-# GERT
-
-```{r}
-library(gert)
-```
-
-PAT: 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
-
-
-```{r}
-credentials::set_github_pat()
-```
-
-
-```{r}
-writeLines("Hello world!", 
-           file.path("C:\\Users\\nmc\\OneDrive - New Mexico State University\\R-projects\\nmsu-grades\\docs",
-                     "example.txt"))
-git_add("docs/example.txt")
-git_commit(paste("Commit on",Sys.time()))
-git_push()
-```
-
-```{r}
-
-
 ```
 
